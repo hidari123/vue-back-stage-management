@@ -1,10 +1,16 @@
 <template>
-  <div>search</div>
+  <div>{{keyword}}</div>
 </template>
 
 <script>
 export default {
-  name: 'Search'
+  name: 'Search',
+  props: {
+    keyword: {
+      type: String,
+      default: ''
+    }
+  }
 }
 </script>
 

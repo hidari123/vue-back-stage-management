@@ -27,6 +27,32 @@ const routes = [
   }
 ]
 
+// 先把 VueRouter 原型对象的 push / replace 保存一份
+const originPush = VueRouter.prototype.push
+const originReplace = VueRouter.prototype.replace
+
+// 重写 push 和 replace 方法
+// 第一个参数： 告诉原来的 push 方法 => 往哪里跳转（传递哪些参数）
+VueRouter.prototype.push = function (location, resolve, reject) {
+  if (resolve && reject) {
+    // call 传递参数 用逗号隔开
+    // 调用 thia.$router.push 保证上下文是 this.$router 的实例
+    // 不绑定 this 是 window
+    originPush.call(this, location, resolve, reject)
+  } else {
+    originPush.call(this, location, () => {}, () => {})
+  }
+}
+
+VueRouter.prototype.replace = function (location, resolve, reject) {
+  if (resolve && reject) {
+    originReplace.call(this, location, resolve, reject)
+  } else {
+    originReplace.call(this, location, () => {}, () => {})
+  }
+}
+
+// 配置路由
 const router = new VueRouter({
   // history 模式
   // hash模式的原理是依赖hashchange（地址的变化带动内容的变化）有#号，丑，不优雅
