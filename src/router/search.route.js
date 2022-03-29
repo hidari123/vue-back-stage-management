@@ -2,7 +2,8 @@ export default {
   path: '/search',
   name: 'Search',
   meta: {
-    require: false
+    require: false,
+    show: true
   },
   component: () => import('@/pages/Search')
 }

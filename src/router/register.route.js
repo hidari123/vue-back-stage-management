@@ -2,7 +2,8 @@ export default {
   path: '/register',
   name: 'Register',
   meta: {
-    require: false
+    require: false,
+    show: false
   },
   component: () => import('@/pages/Register')
 }

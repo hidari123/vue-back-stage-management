@@ -2,7 +2,8 @@ export default {
   path: '/login',
   name: 'Login',
   meta: {
-    require: false
+    require: false,
+    show: false
   },
   component: () => import('@/pages/Login')
 }

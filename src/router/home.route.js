@@ -2,7 +2,8 @@ export default {
   path: '/home',
   name: 'Home',
   meta: {
-    require: false
+    require: false,
+    show: true
   },
   component: () => import('@/pages/Home')
 }
