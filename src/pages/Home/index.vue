@@ -27,6 +27,10 @@ export default {
     Like,
     Floor,
     Brand
+  },
+  methods: {
+  },
+  computed: {
   }
 }
 </script>

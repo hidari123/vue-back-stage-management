@@ -1,4 +1,6 @@
 @import "./iconfont.css";
+/* 引入进度条样式 */
+@import 'nprogress/nprogress.css';
  
 /* 清除内外边距 */
 body, h1, h2, h3, h4, h5, h6, hr, p, blockquote,
@@ -75,3 +77,8 @@ a:link:hover{
     clear: both;
     visibility: hidden;
 }
+
+/* 修改 nprogress 颜色 */
+#nprogress .bar {
+    background: pink !important; 
+  }
