@@ -13,6 +13,8 @@
     - [vuex模块化](#vuex%E6%A8%A1%E5%9D%97%E5%8C%96)
     - [js => 一级分类动态添加背景色](#js--%E4%B8%80%E7%BA%A7%E5%88%86%E7%B1%BB%E5%8A%A8%E6%80%81%E6%B7%BB%E5%8A%A0%E8%83%8C%E6%99%AF%E8%89%B2)
     - [卡顿现象 => 节流和防抖](#%E5%8D%A1%E9%A1%BF%E7%8E%B0%E8%B1%A1--%E8%8A%82%E6%B5%81%E5%92%8C%E9%98%B2%E6%8A%96)
+    - [三级联动传参](#%E4%B8%89%E7%BA%A7%E8%81%94%E5%8A%A8%E4%BC%A0%E5%8F%82)
+    - [Search 模块中 TypeNav 商品分类菜单过渡动画](#search-%E6%A8%A1%E5%9D%97%E4%B8%AD-typenav-%E5%95%86%E5%93%81%E5%88%86%E7%B1%BB%E8%8F%9C%E5%8D%95%E8%BF%87%E6%B8%A1%E5%8A%A8%E7%94%BB)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -452,49 +454,172 @@ changeIndex (index) {
     2. 但是需要注意会出现卡顿现象
         1. router-link 是一个组件 当服务器数据返回后 创建出很多 router-link 组件 瞬间创建出很多组件实例
         2. 创建组件实例的时候 很耗内存 出现卡顿
-7. 三级联动传参
-    1. 需求：三级联动菜单需要点击跳转链接，如果每个都写声明式导航 router-link 组件消耗内存过大 网页卡顿，如果每个a标签上都写点击事件，需要写很多次，性能不是很好
-    2. 优化方案：事件委派，在父元素上写点击事件 写一次可以调用所有子元素
-        1. 优化方案问题：
-            1. 无法确定点击的是a标签
-            2. 无法确定点击的是1、2、3级a标签
-        2. 优化方案解决：
-            1. 自定义事件`:data-categoryName`确定点击的是a标签 `<a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>`
-            2. 自定义事件`data-categoryid`确定点击的是哪一级菜单 三级菜单的自定义事件不同
-            3. event.target 获取是哪个节点触发了事件 节点的属性 => dataset 可以获取节点的自定义属性和属性
-            4. 传参：定义对象，动态传入参数
-        3. 代码实现：
-        ```js
-            goSearch (event) {
-                // 跳转最佳解决方案：编程式导航 + 事件委派
-                // 利用事件委派存在一些问题：
-                // 事件委派是把所有的子节点的事件委派给父标签
-                // 1. 怎么确定点击的是 a 标签？
-                // 2. 如何获取参数？ => 1、2、3级分类的产品的名字、id
-                // 点击的是 a 标签 => 自定义属性 :data-categoryName="c1.categoryName"
-                // event.target 可以获取是哪个节点触发了事件 需要带到带有 data-categoryName 这样的节点 => a 标签
-                // 节点有一个属性 => dataset 可以获取节点的自定义属性和属性
-                const element = event.target
-                const { categoryname } = element.dataset
-                const { category1id, category2id, category3id } = element.dataset
-                // 如果标签上有 categoryname 属性 一定是 a 标签
-                if (categoryname) {
-                    // 整理路由跳转的参数
-                    const location = { name: 'Search' }
-                    const query = { categoryName: categoryname }
-                    // 一级二级三级分类
-                    if (category1id) {
-                        query.category1id = category1id
-                    } else if (category2id) {
-                        query.category2id = category2id
-                    } else if (category3id) {
-                        query.category3id = category3id
-                    }
-                    // 整理完参数
-                    location.query = query
-                    console.log(location)
-                    // 路由跳转
-                    this.$router.push(location)
+### 三级联动传参
+1. 需求：三级联动菜单需要点击跳转链接，如果每个都写声明式导航 router-link 组件消耗内存过大 网页卡顿，如果每个a标签上都写点击事件，需要写很多次，性能不是很好
+2. 优化方案：事件委派，在父元素上写点击事件 写一次可以调用所有子元素
+    1. 优化方案问题：
+        1. 无法确定点击的是a标签
+        2. 无法确定点击的是1、2、3级a标签
+    2. 优化方案解决：
+        1. 自定义事件`:data-categoryName`确定点击的是a标签 `<a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>`
+        2. 自定义事件`data-categoryid`确定点击的是哪一级菜单 三级菜单的自定义事件不同
+        3. event.target 获取是哪个节点触发了事件 节点的属性 => dataset 可以获取节点的自定义属性和属性
+        4. 传参：定义对象，动态传入参数
+    3. 代码实现：
+    ```js
+        goSearch (event) {
+            // 跳转最佳解决方案：编程式导航 + 事件委派
+            // 利用事件委派存在一些问题：
+            // 事件委派是把所有的子节点的事件委派给父标签
+            // 1. 怎么确定点击的是 a 标签？
+            // 2. 如何获取参数？ => 1、2、3级分类的产品的名字、id
+            // 点击的是 a 标签 => 自定义属性 :data-categoryName="c1.categoryName"
+            // event.target 可以获取是哪个节点触发了事件 需要带到带有 data-categoryName 这样的节点 => a 标签
+            // 节点有一个属性 => dataset 可以获取节点的自定义属性和属性
+            const element = event.target
+            const { categoryname } = element.dataset
+            const { category1id, category2id, category3id } = element.dataset
+            // 如果标签上有 categoryname 属性 一定是 a 标签
+            if (categoryname) {
+                // 整理路由跳转的参数
+                const location = { name: 'Search' }
+                const query = { categoryName: categoryname }
+                // 一级二级三级分类
+                if (category1id) {
+                    query.category1id = category1id
+                } else if (category2id) {
+                    query.category2id = category2id
+                } else if (category3id) {
+                    query.category3id = category3id
                 }
+                // 整理完参数
+                location.query = query
+                console.log(location)
+                // 路由跳转
+                this.$router.push(location)
             }
-        ```
+        }
+    ```
+### Search 模块中 TypeNav 商品分类菜单过渡动画
+1. 控制 search 模块 type-nav 显示和隐藏
+解决方案：
+1. type-nav 中添加鼠标移入和鼠标移出事件 ` @mouseleave="leaveShow" @mouseenter="enterShow"`
+2. mounted 挂载时判断路径 如果不是 home 挂载时隐藏 type-nav
+```js
+    mounted () {
+    // 通知 Vuex 发请求，获取数据，存储于仓库中
+    this.$store.dispatch('Home/categoryList')
+    // 当前组件挂载完毕 让 show 属性 变为 false
+    // 如果不是 home 路由组件 将 type-nav 进行隐藏
+    if (this.$route.path !== '/home') {
+    this.show = false
+    }
+}
+
+// methods
+// 鼠标移入，展示商品分类列表
+enterShow () {
+    this.show = true
+    },
+    // 鼠标离开的时候，隐藏商品分类列表
+    leaveShow () {
+    this.currentIndex = -1
+    // 判断如果是 search 组件 隐藏菜单
+    if (this.$route.path !== '/home') {
+        this.show = false
+    }
+}
+```
+3. 过渡动画效果
+    1. 前提：组件 / 元素有 v-if / v-show 指令才可以进行过渡动画
+    2. Vue 提供了 transition 的封装组件，在下列情形中，可以给任何元素和组件添加进入/离开过渡
+        1. 条件渲染 (使用 v-if)
+        2. 条件展示 (使用 v-show)
+        3. 动态组件
+        4. 组件根节点
+        5. ```html
+            <div id="demo">
+            <button v-on:click="show = !show">
+                Toggle
+            </button>
+            <transition name="fade">
+                <p v-if="show">hello</p>
+            </transition>
+            </div>
+            ```
+            ```js
+            new Vue({
+                el: '#demo',
+                data: {
+                    show: true
+                }
+            })
+            ```
+            ```css
+            .fade-enter-active, .fade-leave-active {
+                transition: opacity .5s;
+            }
+            .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+                opacity: 0;
+            }
+            ```
+        3. `transition`的钩子函数：
+            1. `v-enter`：定义上半场过渡的初始状态；在过渡开始前被添加，在过渡开始时会被移除
+            2. `v-enter-to`：定义上半场过渡的结束状态；在过渡开始时被添加，在过渡完成时会被移除
+            3. `v-enter-active`：这里包含了上面的`v-enter`、`v-enter-to`两个时间段，在这里可以对上半场过渡定义过渡时间、曲线等
+            4. `v-leave`：定义下半场过渡的初始状态；在过渡开始前被添加，在过渡开始时会被移除
+            5. `v-leave-to`：定义下半场过渡的结束状态；在过渡开始时被添加，在过渡完成时会被移除
+            6. `v-leave-active`：这里包含了上面的`v-leave`、`v-leave-to`两个时间段，在这里可以对下半场过渡定义过渡时间、曲线等
+        4. 自定义过渡类名：
+            1. 在页面中，我们可能有多个地方需要进行过渡效果，那么如果使用vue提供的默认那6个类，那么所有要过渡地方的过渡效果都是一样的了，这不是我们想要的。这个时候就需要我们自己定义专属于各个过渡效果的类名。
+            2. 其实很简单，只要给`transition`标签添加`name`属性，在`name`属性中写入自己的**类名前缀**
+            例如`<transition name="my"></transition>`，那么在使用类名的时候就是这样的：`.my-leave`、`.my-enter-to`等。
+            注意只能更改前缀，后面的`enter`、`enter-to`、`leave`、`leave-to`、`enter-active`、`leave-active`**是不能变的**
+        5. 过渡列表：
+            1. 对列表进行过渡渲染不能再使用`transition`，必须使用`transition-group`元素包裹；
+            2. 一般列表都是通过`v-for`来实现的，这个时候必须加上 `:key` 属性，这个是官方强制要求的。
+            3. 若是要对列表进行数据删除，并且在被删除元素进行过渡移走时、下一个元素顶上来也必须实现动画，那么就要使用`.v-move`这个类（写`transition`）、在`.v-leave-active`中写`position:absolute`（这个时候要记得给被删除元素设置宽高）
+            4. `transition-group`在DOM上不会像`transition`一样什么都不显示，而是会以一个真实的`span`标签进行显示；因为列表一般是包含在`ul`、`ol`、`dl`中，这些标签W3C规定只能添加 `li` 元素，那么这里的`span`包含在`ul`中就不合规范了，我们可以给`transi-group`设置属性`tag="ul"`，这个是指定`transition-group`元素被渲染成什么元素
+            5. 如果要实现列表进入时的动画，可以给`transition-group`添加`appear`属性即可
+        6. 总结：
+            1. 给一个元素设置过渡效果有三种方式：
+                1. 使用`v-enter`等类
+                2. 使用`before-enter`等钩子函数
+                3. 使用`enter-class`等过渡样式
+            2. 给列表添加过渡要使用`transition-group`进行包裹
+    3. CSS `transition` 属性
+        1. `transition` 属性是一个简写属性，用于设置四个过渡属性：
+            1. `transition-property`：规定设置过渡效果的 CSS 属性的名称（默认：`all`）
+            2. `transition-duration`：规定完成过渡效果需要多少秒或毫秒。
+            3. `transition-timing-function`：规定速度效果的速度曲线。
+            4. `transition-delay`：定义过渡效果何时开始。
+            - **注释：**请始终设置 `transition-duration` 属性，否则时长为 0，就不会产生过渡效果。
+    4. 实现：
+    ```css
+    // 过渡动画样式
+    // 过渡动画开始状态（进入）
+    .sort-enter {
+        height: 0px;
+    }
+    // 过渡动画结束状态（进入）
+    .sort-enter-to {
+        height: 461px;
+    }
+    // 定义动画时间，速率
+    .sort-enter-active {
+        transition: all .5s linear;
+    }
+    ```
+ ### 多个页面请求只发一次
+ 1. 需求：多个页面切换，之发送一次请求
+ 2. 实现：App.vue 根组件程序运行时`mounted`只会加载一次
+    - main.js 虽然也只加载一次 但是不能在这里使用
+    - 原因：`this` => 实例对象
+ 3. 代码 => App.vue
+ ```js
+mounted () {
+    // 派发一个 action 获取商品分类的三级列表数据 程序运行时只加载一次
+    // 通知 Vuex 发请求，获取数据，存储于仓库中
+    this.$store.dispatch('Home/categoryList')
+}
+ ```

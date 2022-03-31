@@ -1,5 +1,8 @@
 <template>
-  <div>{{keyword}}</div>
+  <div>
+      <!-- search模块 -->
+      <type-nav />
+  </div>
 </template>
 
 <script>

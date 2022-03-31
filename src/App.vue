@@ -15,6 +15,11 @@ export default {
   components: {
     Header,
     Footer
+  },
+  mounted () {
+    // 派发一个 action 获取商品分类的三级列表数据 程序运行时只加载一次
+    // 通知 Vuex 发请求，获取数据，存储于仓库中
+    this.$store.dispatch('Home/categoryList')
   }
 }
 </script>
