@@ -12,6 +12,7 @@
     - [axios 二次封装](#axios-%E4%BA%8C%E6%AC%A1%E5%B0%81%E8%A3%85)
     - [vuex模块化](#vuex%E6%A8%A1%E5%9D%97%E5%8C%96)
     - [js => 一级分类动态添加背景色](#js--%E4%B8%80%E7%BA%A7%E5%88%86%E7%B1%BB%E5%8A%A8%E6%80%81%E6%B7%BB%E5%8A%A0%E8%83%8C%E6%99%AF%E8%89%B2)
+    - [卡顿现象 => 节流和防抖](#%E5%8D%A1%E9%A1%BF%E7%8E%B0%E8%B1%A1--%E8%8A%82%E6%B5%81%E5%92%8C%E9%98%B2%E6%8A%96)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -376,3 +377,124 @@ export default {
 }
 </script>
 ```
+```js
+// 动态控制显示和隐藏
+:style="{display: currentIndex === index ? 'block' : 'none'}"
+```
+
+### 卡顿现象 => 节流和防抖
+```js 
+changeIndex (index) {
+    this.currentIndex = index
+    // 正常情况：用户慢慢操作 => 鼠标进入 => 每一个一级分类 h3 都会触发鼠标进入事件
+    // 非正常情况：用户操作很快 => 本来全部的一级分类都应该触发鼠标进入事件 但是只有部分触发
+    // 因为用户行为过快 导致浏览器反应不过来 => 如果当前回调函数中有一些大量业务 有可能出现卡顿现象
+    console.log(index)
+}
+```
+1. lodash 插件： 自带 封装函数的节流与防抖的业务（闭包 + 延时器）
+2. 防抖就是监听事件触发后,N秒之后再执行要操作的事物，防止用户多次重复点击请求数据。
+   在设定的时间周期内,如果再次被触发,则取消回调,重新开始计时
+   - 实现方式：每次触发事件时设置一个延迟调用方法，并且取消之前的延时调用方法
+   - 缺点：如果事件在规定的时间间隔内被不断的触发，则调用方法会被不断的延迟
+   - ```js
+        //防抖debounce代码：
+        function debounce(fn) {
+            let timeout = null; // 创建一个标记用来存放定时器的返回值
+            return function () {
+                // 每当用户输入的时候把前一个 setTimeout clear 掉
+                clearTimeout(timeout); 
+                // 然后又创建一个新的 setTimeout, 这样就能保证interval 间隔内如果时间持续触发，就不会执行 fn 函数
+                timeout = setTimeout(() => {
+                    fn.apply(this, arguments);
+                }, 500);
+            };
+        }
+        // 处理函数
+        function handle() {
+            console.log(Math.random());
+        }
+        // 滚动事件
+        window.addEventListener('scroll', debounce(handle));
+     ```
+3. 节流：使得一定时间内只触发一次函数。原理是通过判断是否有延迟调用函数未执行。
+   - 实现方式：每次触发事件时，如果当前有等待执行的延时函数，则直接return
+   - ```js
+        //节流throttle代码：
+        function throttle(fn) {
+            let canRun = true; // 通过闭包保存一个标记
+            return function () {
+                // 在函数开头判断标记是否为true，不为true则return
+                if (!canRun) return;
+                // 立即设置为false
+                canRun = false;
+                // 将外部传入的函数的执行放在setTimeout中
+                setTimeout(() => { 
+                // 最后在setTimeout执行完毕后再把标记设置为true(关键)表示可以执行下一次循环了。
+                // 当定时器没有执行的时候标记永远是false，在开头被return掉
+                    fn.apply(this, arguments);
+                    canRun = true;
+                }, 500);
+            };
+        }
+
+        function sayHi(e) {
+            console.log(e.target.innerWidth, e.target.innerHeight);
+        }
+        window.addEventListener('resize', throttle(sayHi));
+     ```
+4. 区别： 
+   1. 函数节流不管事件触发有多频繁，都会保证在规定时间内一定会执行一次真正的事件处理函数
+   2. 函数防抖只是在最后一次事件后才触发一次函数。 比如在页面的无限加载场景下，我们需要用户在滚动页面时，每隔一段时间发一次 Ajax 请求，而不是在用户停下滚动页面操作时才去请求数据。这样的场景，就适合用节流技术来实现。
+5. 本项目用节流实现频繁 hover 变成少量操作 防止卡顿
+6. 路由跳转
+    1. 三级联动：如果使用声明式导航 router-link 可以实现路由的跳转和传递参数
+    2. 但是需要注意会出现卡顿现象
+        1. router-link 是一个组件 当服务器数据返回后 创建出很多 router-link 组件 瞬间创建出很多组件实例
+        2. 创建组件实例的时候 很耗内存 出现卡顿
+7. 三级联动传参
+    1. 需求：三级联动菜单需要点击跳转链接，如果每个都写声明式导航 router-link 组件消耗内存过大 网页卡顿，如果每个a标签上都写点击事件，需要写很多次，性能不是很好
+    2. 优化方案：事件委派，在父元素上写点击事件 写一次可以调用所有子元素
+        1. 优化方案问题：
+            1. 无法确定点击的是a标签
+            2. 无法确定点击的是1、2、3级a标签
+        2. 优化方案解决：
+            1. 自定义事件`:data-categoryName`确定点击的是a标签 `<a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>`
+            2. 自定义事件`data-categoryid`确定点击的是哪一级菜单 三级菜单的自定义事件不同
+            3. event.target 获取是哪个节点触发了事件 节点的属性 => dataset 可以获取节点的自定义属性和属性
+            4. 传参：定义对象，动态传入参数
+        3. 代码实现：
+        ```js
+            goSearch (event) {
+                // 跳转最佳解决方案：编程式导航 + 事件委派
+                // 利用事件委派存在一些问题：
+                // 事件委派是把所有的子节点的事件委派给父标签
+                // 1. 怎么确定点击的是 a 标签？
+                // 2. 如何获取参数？ => 1、2、3级分类的产品的名字、id
+                // 点击的是 a 标签 => 自定义属性 :data-categoryName="c1.categoryName"
+                // event.target 可以获取是哪个节点触发了事件 需要带到带有 data-categoryName 这样的节点 => a 标签
+                // 节点有一个属性 => dataset 可以获取节点的自定义属性和属性
+                const element = event.target
+                const { categoryname } = element.dataset
+                const { category1id, category2id, category3id } = element.dataset
+                // 如果标签上有 categoryname 属性 一定是 a 标签
+                if (categoryname) {
+                    // 整理路由跳转的参数
+                    const location = { name: 'Search' }
+                    const query = { categoryName: categoryname }
+                    // 一级二级三级分类
+                    if (category1id) {
+                        query.category1id = category1id
+                    } else if (category2id) {
+                        query.category2id = category2id
+                    } else if (category3id) {
+                        query.category3id = category3id
+                    }
+                    // 整理完参数
+                    location.query = query
+                    console.log(location)
+                    // 路由跳转
+                    this.$router.push(location)
+                }
+            }
+        ```

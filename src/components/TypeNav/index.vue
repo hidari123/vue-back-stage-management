@@ -1,23 +1,27 @@
 <template>
     <div class="type-nav">
         <div class="container">
+            <!-- 事件委托 / 事件代理 -->
             <div @mouseleave="changeIndex(-1)">
                 <h2 class="all">全部商品分类</h2>
+                <!-- 三级联动 -->
                 <div class="sort">
-                    <div class="all-sort-list2">
+                    <!-- 事件委派 + 编程式导航 实现路由跳转和传参 -->
+                    <div class="all-sort-list2" @click="goSearch">
                         <div class="item" v-for="(c1, index) in categoryList" :key="c1.categoryId">
                             <h3 @mouseenter="changeIndex(index)" :class="{cur: currentIndex === index}">
-                                <a href="">{{c1.categoryName}}</a>
+                                <a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>
                             </h3>
-                            <div class="item-list clearfix">
+                            <!-- 二级、三级分类 -->
+                            <div class="item-list clearfix" :style="{display: currentIndex === index ? 'block' : 'none'}">
                                 <div class="subitem" v-for="c2 in c1.categoryChild" :key="c2.categoryId">
                                     <dl class="fore">
                                         <dt>
-                                            <a href="">{{c2.categoryName}}</a>
+                                            <a :data-categoryName="c2.categoryName" :data-category2id="c2.categoryId">{{c2.categoryName}}</a>
                                         </dt>
                                         <dd>
                                             <em v-for="c3 in c2.categoryChild" :key="c3.categoryId">
-                                                <a href="">{{c3.categoryName}}</a>
+                                                <a :data-categoryName="c3.categoryName" :data-category3id="c3.categoryId">{{c3.categoryName}}</a>
                                             </em>
                                         </dd>
                                     </dl>
@@ -43,6 +47,9 @@
 
 <script>
 import { mapState } from 'vuex'
+// 这种引入方式是把 lodash 全部功能函数引入
+// import _ from 'lodash'
+import throttle from 'lodash/throttle'
 export default {
   name: 'TypeNav',
   data () {
@@ -65,8 +72,40 @@ export default {
   },
   methods: {
     // 鼠标进入修改响应式数据 currentIndex 属性
-    changeIndex (index) {
+    // throttle 回调函数别用箭头函数 可能出现上下文 this 问题
+    changeIndex: throttle(function (index) {
       this.currentIndex = index
+    }, 50),
+    goSearch (event) {
+      // 跳转最佳解决方案：编程式导航 + 事件委派
+      // 利用事件委派存在一些问题：
+      // 事件委派是把所有的子节点的事件委派给父标签
+      // 1. 怎么确定点击的是 a 标签？
+      // 2. 如何获取参数？ => 1、2、3级分类的产品的名字、id
+      // 点击的是 a 标签 => 自定义属性 :data-categoryName="c1.categoryName"
+      // event.target 可以获取是哪个节点触发了事件 需要带到带有 data-categoryName 这样的节点 => a 标签
+      // 节点有一个属性 => dataset 可以获取节点的自定义属性和属性
+      const element = event.target
+      const { categoryname } = element.dataset
+      const { category1id, category2id, category3id } = element.dataset
+      // 如果标签上有 categoryname 属性 一定是 a 标签
+      if (categoryname) {
+        // 整理路由跳转的参数
+        const location = { name: 'Search' }
+        const query = { categoryName: categoryname }
+        // 一级二级三级分类
+        if (category1id) {
+          query.category1id = category1id
+        } else if (category2id) {
+          query.category2id = category2id
+        } else if (category3id) {
+          query.category3id = category3id
+        }
+        // 整理完参数
+        location.query = query
+        // 路由跳转
+        this.$router.push(location)
+      }
     }
   }
 }
@@ -185,11 +224,11 @@ export default {
                             }
                         }
 
-                        &:hover {
-                            .item-list {
-                                display: block;
-                            }
-                        }
+                        // &:hover {
+                        //     .item-list {
+                        //         display: block;
+                        //     }
+                        // }
                     }
                 }
             }
