@@ -52,12 +52,12 @@ export default {
     // 搜索按钮回调函数
     goSearch () {
       // 路由传参
-      this.$router.push({
+      const location = {
         name: 'Search',
-        params: {
-          keyword: this.keyword
-        }
-      })
+        params: { keyword: this.keyword || undefined }
+      }
+      location.query = this.$route.query
+      this.$router.push(location)
     }
   }
 }

@@ -108,6 +108,8 @@ export default {
         } else if (category3id) {
           query.category3id = category3id
         }
+        // 判断：如果路由跳转的时候，带有 params 参数，需要一起传递过去，if永远为真（empty）
+        location.params = this.$route.params
         // 整理完参数
         location.query = query
         // 路由跳转

@@ -3,6 +3,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [vue-back-stage-management](#vue-back-stage-management)
+  - [1.1. 项目描述](#11-%E9%A1%B9%E7%9B%AE%E6%8F%8F%E8%BF%B0)
   - [项目配置](#%E9%A1%B9%E7%9B%AE%E9%85%8D%E7%BD%AE)
   - [业务逻辑：](#%E4%B8%9A%E5%8A%A1%E9%80%BB%E8%BE%91)
     - [route 动态引入：](#route-%E5%8A%A8%E6%80%81%E5%BC%95%E5%85%A5)
@@ -15,10 +16,22 @@
     - [卡顿现象 => 节流和防抖](#%E5%8D%A1%E9%A1%BF%E7%8E%B0%E8%B1%A1--%E8%8A%82%E6%B5%81%E5%92%8C%E9%98%B2%E6%8A%96)
     - [三级联动传参](#%E4%B8%89%E7%BA%A7%E8%81%94%E5%8A%A8%E4%BC%A0%E5%8F%82)
     - [Search 模块中 TypeNav 商品分类菜单过渡动画](#search-%E6%A8%A1%E5%9D%97%E4%B8%AD-typenav-%E5%95%86%E5%93%81%E5%88%86%E7%B1%BB%E8%8F%9C%E5%8D%95%E8%BF%87%E6%B8%A1%E5%8A%A8%E7%94%BB)
+    - [多个页面请求只发一次](#%E5%A4%9A%E4%B8%AA%E9%A1%B5%E9%9D%A2%E8%AF%B7%E6%B1%82%E5%8F%AA%E5%8F%91%E4%B8%80%E6%AC%A1)
+    - [mock.js 模拟数据](#mockjs-%E6%A8%A1%E6%8B%9F%E6%95%B0%E6%8D%AE)
+    - [swiper 轮播图](#swiper-%E8%BD%AE%E6%92%AD%E5%9B%BE)
+    - [v-for 在自定义标签中使用](#v-for-%E5%9C%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%87%E7%AD%BE%E4%B8%AD%E4%BD%BF%E7%94%A8)
+    - [组件通信的方式](#%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E7%9A%84%E6%96%B9%E5%BC%8F)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # vue-back-stage-management
+
+## 1.1. 项目描述
+1. 此项目为在线电商Web App (SPA)
+2. 包括首页, 搜索列表, 商品详情, 购物车, 订单, 支付, 用户登陆/注册等多个子模块
+3. 使用Vue全家桶+ES6++Webpack+Axios等前端最新最热的技术
+4. 采用模块化、组件化、工程化的模式开发
+
 
 ## 项目配置
 1. public: 静态资源（图片） => webpack 打包时原封不动打包到 dist 文件夹中
@@ -500,6 +513,28 @@ changeIndex (index) {
             }
         }
     ```
+3. 合并参数
+    1. 在用动态传参时，如果只传params参数，会覆盖之前携带的query参数；如果只传query参数，会覆盖之前携带的params参数
+    2. 解决方案：如果有query参数，传递params参数的时候携带；反之也是
+    3. 代码实现：
+    ```js
+    // 如果路由跳转的时候，带有 params 参数，需要一起传递过去，判断永远为真（empty），所以去掉 if 
+    location.params = this.$route.params
+    // 整理完参数
+    location.query = query
+    // 路由跳转
+    this.$router.push(location)
+    ```
+    ```js
+    // 路由传参
+    const location = {
+        name: 'Search',
+        params: { keyword: this.keyword || undefined }
+    }
+    location.query = this.$route.query
+    this.$router.push(location)
+    ```
+
 ### Search 模块中 TypeNav 商品分类菜单过渡动画
 1. 控制 search 模块 type-nav 显示和隐藏
 解决方案：
@@ -610,7 +645,7 @@ enterShow () {
         transition: all .5s linear;
     }
     ```
- ### 多个页面请求只发一次
+### 多个页面请求只发一次
  1. 需求：多个页面切换，之发送一次请求
  2. 实现：App.vue 根组件程序运行时`mounted`只会加载一次
     - main.js 虽然也只加载一次 但是不能在这里使用
@@ -623,3 +658,217 @@ mounted () {
     this.$store.dispatch('Home/categoryList')
 }
  ```
+
+### mock.js 模拟数据
+https://github.com/nuysoft/Mock/wiki
+1. 前端 mock 的数据不会对服务器进行通信，拦截 ajax 请求
+2. 准备 JSON 数据 => mock 文件夹下创建相应的 JSON 文件
+3. 把 mock 数据需要的图片放置在 public 文件夹下 => public 文件夹在打包时，会把相应的资源原封不动的打包到 dist 文件夹中
+4. 创建 mockServe.js => 开始 mock，通过 mockjs 模块实现
+5. mockServe.js 文件在入口文件中引入（至少需要执行一次，才能模拟数据）
+6. 代码实现：
+```js
+// 模拟数据
+// 引入 mockjs 模块
+import Mock from 'mockjs'
+// 引入 JSON 格式数据(JSON 数据没有对外暴露，但是可以引入)
+// webpack 默认对外暴露 image JSON css
+import banner from './banner.json'
+import floor from './floor.json'
+
+// mock 数据：第一个参数请求地址，第二个参数请求数据
+Mock.mock('/mock/banner', { code: 200, data: banner }) // 模拟首页轮播图数据
+Mock.mock('/mock/floor', { code: 200, data: floor })
+```
+7. request请求封装
+    1. create 新的 axios实例，设置baseURL与mockServe.js的baseURL相同
+    ```js
+    const morkRequests = axios.create({
+    // 配置对象
+    baseURL: '/mock',
+    timeout: 5000
+    })
+    ```
+    2. 封装axios请求
+
+### swiper 轮播图
+1. 安装 swiper 插件（vue2中最好用 swiper@5.4.5
+2. 引包
+```js
+import Swiper from 'swiper'
+import 'swiper/css'
+```
+3. 页面中结构
+4. 在页面中有结构后 new Swiper 实例
+```js
+// new Swiper 实例
+const mySwiper = new Swiper('.swiper-container', {
+    loop: true,
+    // 分页器
+    pagination: {
+        el: '.swiper-pagination',
+        clickable: true
+    },
+    // 前进 / 后退 按钮
+    navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev'
+    }
+})
+```
+5. mounted 中放置 swiper 失效
+    1. new Swiper 实例前，页面中结构必须要有，但是放在 mounted（挂载完毕） 中不行 页面结构还不完整
+        - 因为有些数据是动态的（v-for遍历的是服务器的数据，这个时候还没有添加到 stage中），仓库中的数据还不完整
+        - dispatch 中涉及到异步语句 => v-for 便利的时候结构还不完整
+        - 可以用定时器 setTimeout，只能完成功能，不能确定什么什么时候异步语句执行完成
+    2. 解决方案：watch 数据监听 => 已有数据变化
+        1. 仓库中 bannerList 数据从 [] => 有数据，可以监听组件的 bannerList
+        2. 在 watch 中直接执行时只能保证数据有了 不能保证 v-for 执行完成，v-for执行完成才有页面
+        3. nextTick
+            1. 放在`Vue.nextTick()` 回调函数中的执行的应该是会**对DOM进行操作的js代码**
+            2. 理解：`nextTick()` 是将回调函数延迟在下一次dom更新数据后调用 => 当数据更新了，在dom中渲染后，自动执行该函数
+            3. Vue 实现响应式并不是数据发生变化之后 DOM 立即变化，而是按一定的策略进行 DOM 的更新。`$nextTick` 是在下次 DOM 更新循环结束之后执行延迟回调，在修改数据之后使用 `$nextTick`，则可以在回调中获取更新后的 DOM
+            4. `$nextTick`可以保证页面中结构一定是有的，经常和很多插件一起使用（都需要DOM存在了）
+    3. 代码实现
+    ```js
+      watch: {
+        // 监听 bannerList 数据的变化
+        // 因为这条数据发生过变化：[] => 有数据
+        bannerList: {
+            handler (newValue, oldValue) {
+                // 通过 watch 监听 bannerList 数据的变化
+                // nextTick() 在 下次DOM更新 循环结束之后 执行延迟回调 在修改数据之后 立即使用这个方法 获取更新后的DOM
+                this.$nextTick(() => {
+                    // 当执行这个回调的时候 保证服务器数据回来了 v-for执行完毕了（轮播图的结构一定有了）
+                    // eslint-disable-next-line no-unused-vars
+                    const mySwiper = new Swiper('.swiper-container', {
+                        loop: true,
+                        // 分页器
+                        pagination: {
+                            el: '.swiper-pagination',
+                            clickable: true
+                        },
+                        // 前进 / 后退 按钮
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev'
+                        }
+                    })
+                })
+            }
+        }
+    }
+    ```
+
+### v-for 在自定义标签中使用
+1. 切记：仓库中 state 数据格式，取决于服务器返回的数据
+2. getFloorList 这个 action 在哪里触发 => 需要遍历循环出两个 floor 所以在父组件 home 中触发
+3. v-for 也可以在自定义标签中使用
+```html
+<floor v-for="floor in floorList" :key="floor.id"/>
+```
+4. floor组件中 swiper 轮播图放在 `mounted` 中
+    1. 在组件内部发请求并且动态渲染结构（服务器数据需要请求完毕）因此不能写在 `mounted` 中
+    2. 这次请求的数据在父组件home组件中 `mounted` 中，父组件先执行 `mounted` 挂载完毕后再执行子组件的 `beforeCreate`，经验证，在 `beforeCreate` 中 `new Swiper` 也可以成功，说明子组件在`create`前就已经渲染出页面加载好数据了
+    3. 先有数据，数据到了之后`v-for`已经执行完了，结构已经完成了，再实现轮播图
+    4. ```js
+      // 在 beforeCreate 里也成功了
+      beforeCreate () {
+        // eslint-disable-next-line no-unused-vars
+        const mySwiper = new Swiper('.swiper-container', {
+            loop: true,
+            // 分页器
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true
+            },
+            // 前进 / 后退 按钮
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev'
+            }
+            })
+        }
+        ```
+
+### 组件通信的方式
+1. props => 父 => 子
+```js
+:list="floor"
+```
+```js
+props: [
+    'list'
+]
+```
+2. 自定义事件：@on @emit 子 => 父
+3. 全局事件总线 $bus => 全能
+4. pubsub-js vue中不用 全能（react）
+5. 插槽 具名插槽 作用域插槽 默认插槽
+
+### 封装共用组件 Carousel
+1. 需求：拆分 Carousel
+2. 问题：两个页面中 Carousel 组件 `new Swiper` 时间节点不同
+3. 解决方案：全部变成 `watch`
+    1. 问题：floor 页面中数据和页面渲染已经在父组件中完成，无法监听到数据变化
+    2. 解决方案：`immediate:true` => 立即执行一次
+4. 代码实现：（共用组件放在 componments 文件夹下）
+```vue
+<template>
+    <div class="swiper-container" id="floor2Swiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide" v-for="carousel in list" :key="carousel.id">
+                <img :src="carousel.imgUrl">
+            </div>
+        </div>
+        <!-- 如果需要分页器 -->
+        <div class="swiper-pagination"></div>
+
+        <!-- 如果需要导航按钮 -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+    </div>
+</template>
+
+<script>
+import Swiper from 'swiper'
+export default {
+  name: 'Carousel',
+  props: ['list'],
+  watch: {
+    list: {
+      // immediate 立即监听数据有没有变化，立即执行一次
+      // 父组件给的数据 在子组件中未发生变化
+      immediate: true,
+      handler () {
+        // 保证组件结构相同，都加上 $nextTick()
+        this.$nextTick(() => {
+        // eslint-disable-next-line no-unused-vars
+          const mySwiper = new Swiper('.swiper-container', {
+            loop: true,
+            // 分页器
+            pagination: {
+              el: '.swiper-pagination',
+              clickable: true
+            },
+            // 前进 / 后退 按钮
+            navigation: {
+              nextEl: '.swiper-button-next',
+              prevEl: '.swiper-button-prev'
+            }
+          })
+        })
+      }
+    }
+  }
+}
+</script>
+```
+```html
+<!-- floor 组件传值 -->
+<carousel :list="list.carouselList"/>
+```
+```html
+<!-- listContainer 组件传值 -->
+<carousel :list="bannerList"/>
+```
