@@ -22,5 +22,9 @@ new Vue({
   // 当这里写 router 时，组件身上都有 $router, $route 属性
   router,
   store,
-  render: h => h(App)
+  render: h => h(App),
+  beforeCreate () {
+    // 配置全局事件总线 $bus
+    Vue.prototype.$bus = this
+  }
 }).$mount('#app')

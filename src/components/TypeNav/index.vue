@@ -12,18 +12,18 @@
                         <div class="all-sort-list2" @click="goSearch">
                             <div class="item" v-for="(c1, index) in categoryList" :key="c1.categoryId">
                                 <h3 @mouseenter="changeIndex(index)" :class="{cur: currentIndex === index}">
-                                    <a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>
+                                    <a :data-categoryName="c1.categoryName" :data-category1Id="c1.categoryId">{{c1.categoryName}}</a>
                                 </h3>
                                 <!-- 二级、三级分类 -->
                                 <div class="item-list clearfix" :style="{display: currentIndex === index ? 'block' : 'none'}">
                                     <div class="subitem" v-for="c2 in c1.categoryChild" :key="c2.categoryId">
                                         <dl class="fore">
                                             <dt>
-                                                <a :data-categoryName="c2.categoryName" :data-category2id="c2.categoryId">{{c2.categoryName}}</a>
+                                                <a :data-categoryName="c2.categoryName" :data-category2Id="c2.categoryId">{{c2.categoryName}}</a>
                                             </dt>
                                             <dd>
                                                 <em v-for="c3 in c2.categoryChild" :key="c3.categoryId">
-                                                    <a :data-categoryName="c3.categoryName" :data-category3id="c3.categoryId">{{c3.categoryName}}</a>
+                                                    <a :data-categoryName="c3.categoryName" :data-category3Id="c3.categoryId">{{c3.categoryName}}</a>
                                                 </em>
                                             </dd>
                                         </dl>
@@ -102,14 +102,14 @@ export default {
         const query = { categoryName: categoryname }
         // 一级二级三级分类
         if (category1id) {
-          query.category1id = category1id
+          query.category1Id = category1id
         } else if (category2id) {
-          query.category2id = category2id
+          query.category2Id = category2id
         } else if (category3id) {
-          query.category3id = category3id
+          query.category3Id = category3id
         }
-        // 判断：如果路由跳转的时候，带有 params 参数，需要一起传递过去，if永远为真（empty）
-        location.params = this.$route.params
+        // 如果有关键字，通知 Header 清除关键字
+        this.$bus.$emit('clear')
         // 整理完参数
         location.query = query
         // 路由跳转

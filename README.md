@@ -3,7 +3,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [vue-back-stage-management](#vue-back-stage-management)
-  - [1.1. 项目描述](#11-%E9%A1%B9%E7%9B%AE%E6%8F%8F%E8%BF%B0)
+  - [项目描述](#%E9%A1%B9%E7%9B%AE%E6%8F%8F%E8%BF%B0)
   - [项目配置](#%E9%A1%B9%E7%9B%AE%E9%85%8D%E7%BD%AE)
   - [业务逻辑：](#%E4%B8%9A%E5%8A%A1%E9%80%BB%E8%BE%91)
     - [route 动态引入：](#route-%E5%8A%A8%E6%80%81%E5%BC%95%E5%85%A5)
@@ -21,12 +21,18 @@
     - [swiper 轮播图](#swiper-%E8%BD%AE%E6%92%AD%E5%9B%BE)
     - [v-for 在自定义标签中使用](#v-for-%E5%9C%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%87%E7%AD%BE%E4%B8%AD%E4%BD%BF%E7%94%A8)
     - [组件通信的方式](#%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E7%9A%84%E6%96%B9%E5%BC%8F)
+    - [封装共用组件 Carousel](#%E5%B0%81%E8%A3%85%E5%85%B1%E7%94%A8%E7%BB%84%E4%BB%B6-carousel)
+    - [axios 参数](#axios-%E5%8F%82%E6%95%B0)
+    - [模块化仓库 getters 整理传递过来的数据](#%E6%A8%A1%E5%9D%97%E5%8C%96%E4%BB%93%E5%BA%93-getters-%E6%95%B4%E7%90%86%E4%BC%A0%E9%80%92%E8%BF%87%E6%9D%A5%E7%9A%84%E6%95%B0%E6%8D%AE)
+    - [页面中多次请求数据](#%E9%A1%B5%E9%9D%A2%E4%B8%AD%E5%A4%9A%E6%AC%A1%E8%AF%B7%E6%B1%82%E6%95%B0%E6%8D%AE)
+    - [Object.assign()](#objectassign)
+    - [面包屑](#%E9%9D%A2%E5%8C%85%E5%B1%91)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # vue-back-stage-management
 
-## 1.1. 项目描述
+## 项目描述
 1. 此项目为在线电商Web App (SPA)
 2. 包括首页, 搜索列表, 商品详情, 购物车, 订单, 支付, 用户登陆/注册等多个子模块
 3. 使用Vue全家桶+ES6++Webpack+Axios等前端最新最热的技术
@@ -474,7 +480,7 @@ changeIndex (index) {
         1. 无法确定点击的是a标签
         2. 无法确定点击的是1、2、3级a标签
     2. 优化方案解决：
-        1. 自定义事件`:data-categoryName`确定点击的是a标签 `<a :data-categoryName="c1.categoryName" :data-category1id="c1.categoryId">{{c1.categoryName}}</a>`
+        1. 自定义事件`:data-categoryName`确定点击的是a标签 `<a :data-categoryName="c1.categoryName" :data-category1Id="c1.categoryId">{{c1.categoryName}}</a>`
         2. 自定义事件`data-categoryid`确定点击的是哪一级菜单 三级菜单的自定义事件不同
         3. event.target 获取是哪个节点触发了事件 节点的属性 => dataset 可以获取节点的自定义属性和属性
         4. 传参：定义对象，动态传入参数
@@ -499,11 +505,11 @@ changeIndex (index) {
                 const query = { categoryName: categoryname }
                 // 一级二级三级分类
                 if (category1id) {
-                    query.category1id = category1id
+                    query.category1Id = category1id
                 } else if (category2id) {
-                    query.category2id = category2id
+                    query.category2Id = category2id
                 } else if (category3id) {
-                    query.category3id = category3id
+                    query.category3Id = category3id
                 }
                 // 整理完参数
                 location.query = query
@@ -515,22 +521,15 @@ changeIndex (index) {
     ```
 3. 合并参数
     1. 在用动态传参时，如果只传params参数，会覆盖之前携带的query参数；如果只传query参数，会覆盖之前携带的params参数
-    2. 解决方案：如果有query参数，传递params参数的时候携带；反之也是
+    2. 解决方案：如果有query参数，传递params参数的时候携带
     3. 代码实现：
-    ```js
-    // 如果路由跳转的时候，带有 params 参数，需要一起传递过去，判断永远为真（empty），所以去掉 if 
-    location.params = this.$route.params
-    // 整理完参数
-    location.query = query
-    // 路由跳转
-    this.$router.push(location)
-    ```
     ```js
     // 路由传参
     const location = {
         name: 'Search',
         params: { keyword: this.keyword || undefined }
     }
+	// 如果路由跳转的时候，带有 query 参数，需要一起传递过去，判断永远为真（empty），所以去掉 if 
     location.query = this.$route.query
     this.$router.push(location)
     ```
@@ -872,3 +871,474 @@ export default {
 <!-- listContainer 组件传值 -->
 <carousel :list="bannerList"/>
 ```
+
+### axios 参数
+```js
+axios({
+  method: 'get', // post、get、put....
+  baseURL: '', // 请求的域名，基本地址，公共的路径
+  url: '', // 请求的路径
+  params: {}, // get参数会将请求参数拼接在url上
+  data: {}, // post会将请求参数放在请求体中
+  headers: {}, // 设置请求头，例如设置token等
+  timeout: 1000, // 设置请求超时时长，单位：ms
+})
+```
+1. data和params：
+    1. data => post 请求
+    2. params => get 请求
+2. vuex 中 action 传参
+```js
+async getSearchList ({ commit }, params = {}) {
+    // 当前 reqGetSearchInfo 这个函数在调用服务器数据的时候，至少传递一个参数（空对象）
+    // params形参：当用户派发 action 时，第二个参数传递过来的，至少是一个空对象
+    const res = await reqGetSearchInfo(params)
+    if (res.code === 200) {
+    commit('SEARCHLIST', res.data)
+    }
+}
+```
+
+### 模块化仓库 getters 整理传递过来的数据
+1. getters 中的形参，在模块化后指的是本模块中的 state
+2. 如果服务器数据请求到了，getters 中数据返回的是一个数组，如果网络不好 | 没有网 返回的是 undefined 不能遍历，至少写一个空数组
+3. 在使用时，打开命名空间的模块前面也需要加模块名
+4. 使用时如果需要对 getters 属性重命名需要使用对象
+5. 代码实现：
+```js
+// Search模块
+getters: {
+    // 当前形参 state => search 仓库中的 state
+    // 如果服务器数据请求到了，返回的是一个数组
+    // 如果网络不好 | 没有网 返回的是 undefined 不能遍历
+    // 至少写一个空数组
+    goodsList (state) {
+    return state.searchList.goodsList || []
+    },
+    trademarkList (state) {
+    return state.searchList.trademarkList || []
+    },
+    attrsList (state) {
+    return state.searchList.attrsList || []
+    }
+}
+```
+```js
+// 使用
+// 把仓库中的数据映射成组件身上的数据
+import { mapGetters } from 'vuex'
+export default {
+    computed: {
+        // 开启命名空间 namespaced => getters也是划分模块的
+        ...mapGetters({
+        // 重命名需要使用对象
+        goodsList: 'Search/goodsList'
+        })
+    }
+}
+```
+
+### 页面中多次请求数据
+1. 问题：在 `mounted` 中请求的数据值会在页面挂载完毕后请求一次
+2. 需求：在 `search` 查找时需要多次请求数据（传递不同参数）
+3. 解决方案：封装成函数，一次封装多次调用，`mounted` 和 `watch` 中调用
+4. 代码实现：
+	1. `watch` 监听路由信息是否发生变化
+	2. `$route` 属于组件实例上的响应式数组，`watch` 监听时不用写 `this`
+```js
+export default {
+	  data () {
+    return {
+      searchParams:
+        // 带给服务器的参数
+        {
+          category1Id: '', // 一级分类 id
+          category2Id: '', // 二级分类 id
+          category3Id: '', // 三级分类 id
+          categoryName: '', // 分类名称
+          keyword: '', // 关键字
+          order: '', // 排序
+          pageNo: 1, // 分页器参数：当前是第几页
+          pageSize: 10, // 每一页展示数据个数
+          props: [''], // 平台售卖属性的参数
+          trademark: '' // 品牌
+        },
+      params: {
+        // 带给服务器的数据是可有可无的，如果属性值为空字符串还是把相应字段带给服务器
+        // 此时赋值为 undefined
+        category1Id: undefined, // 一级分类 id
+        category2Id: undefined, // 二级分类 id
+        category3Id: undefined, // 三级分类 id
+        keyword: undefined, // 关键字
+        categoryName: undefined // 分类名称
+      }
+    }
+  },
+	watch: {
+		// 监听属性
+		// $route 属于组件实例上的响应式数组，和 searchParams 平级
+		// 此处不写 this
+		$route () {
+			// 直接把对象改变指针，此处不需要深度监听
+			// 监听路由信息是否发生变化，如果发生变化，再次发送请求
+			// 再次发送请求前需要整理参数
+			this.getParams()
+			this.getData()
+			// 每一次请求完毕，应该把相应的一二三级分类的 id 置空
+		}
+	},
+    beforeMount () {
+        // 发请求之前要给服务器参数 searchParams
+        // Object.assign 合并对象
+        this.getParams()
+    },
+    // 组件挂载完毕 mounted 只执行一次，不能在里面发请求
+    // 使用函数 => 声明一次，多次调用
+    mounted () {
+        this.getData()
+    },
+  methods: {
+		// 向服务器发请求，获取 search 模块数据 => 根据参数不同，返回不同数据
+		getData () {
+			// 组件挂载完毕 mounted 只执行一次，不能在里面发请求
+			// 使用函数 => 声明一次，多次调用
+			// 先测试再确定数据的格式
+			this.$store.dispatch('Search/getSearchList', this.searchParams)
+		},
+		getParams () {
+			// 下一次传递参数前需要把上一次的清空
+			Object.assign(this.searchParams, this.params)
+			Object.assign(this.searchParams, this.$route.query, this.$route.params)
+		}
+	}
+}
+```
+
+### Object.assign()
+1. ` Object.assign()`方法用于将所有可枚举属性的值从一个或多个源对象分配到目标对象。它将返回目标对象。
+    1. `Object.assign()`接口可以接收多个参数，第一个参数是目标对象，后面的都是源对象，`assign`方法将多个原对象的属性和方法都合并到了目标对象上面，如果在这个过程中出现同名的属性（方法），后合并的属性（方法）会覆盖之前的同名属性（方法）。
+    2. 基本用法
+    ```js
+    var target  = {a : 1}; //目标对象
+    var source1 = {b : 2}; //源对象1
+    var source2 = {c : 3}; //源对象2
+    var source3 = {c : 4}; //源对象3，和source2中的对象有同名属性c
+    Object.assign(target,source1,source2,source3);
+    //结果如下：
+    //{a:1,b:2,c:4}
+    ```
+    3. assign的设计目的是用于合并接口的，所以它接收的第一个参数（目标）应该是对象，如果不是对象的话，它会在内部转换成对象，所以如果碰到了`null`或者`undefined`这种不能转换成对象的值的话，`assign`就会报错。但是如果源对象的参数位置，接收到了无法转换为对象的参数的话，会忽略这个源对象参数。
+    ```js
+    const v1 = 'abc';
+    const v2 = true;
+    const v3 = 10;
+    
+    const obj = Object.assign({}, v1, v2, v3);
+    console.log(obj); // { "0": "a", "1": "b", "2": "c" }
+    ```
+    为什么会出现这个结果呢？首先，第一个参数位置接收到的是对象，所以不会报错，其次，由于字符串转换成对象时，会将字符串中每个字符作为一个属性，所以，abc三个字符作为`“0”，“1”，“2”`三个属性被合并了进去，但是布尔值和数值在转换对象时虽然也成功了，但是属性都是不可枚举的，所以属性没有被成功合并进去。在这里需要记住 **“assign不会合并不可枚举的属性”**
+    ```js
+    Object(true) // {[[PrimitiveValue]]: true}
+    Object(10)  //  {[[PrimitiveValue]]: 10}
+    Object('abc') // {0: "a", 1: "b", 2: "c", length: 3, [[PrimitiveValue]]: "abc"}
+    ```
+    同样，`Object.assign`拷贝的属性是有限制的，只会拷贝对象本身的属性（不会拷贝继承属性），也不会拷贝不可枚举的属性。但是属性名为`Symbol`值的属性，是可以被`Object.assign`拷贝的。
+    如果assign只接收到了一个对象作为参数的话，就是说没有源对象要合并到目标对象上，那会原样把目标对象返回。
+    4. `Object.assign`进行的拷贝是浅拷贝。也就是说，如果拷贝过来的属性的值是对象等复合属性，那么只能拷贝过来一个引用。
+    ```js
+    const obj1 = {a: {b: 1}};
+    const obj2 = Object.assign({}, obj1);
+    
+    obj1.a.b = 2;
+    obj2.a.b // 2
+    ```
+    由于是浅拷贝，所以属性a的内部有任何变化，都会在目标对象上呈现出来。
+    5. `Object.assign`进行合并的时候，一旦碰到同名属性，就会出现覆盖现象。所以使用时务必小心。
+    6. `Object.assign`是针对`Object`开发的API，一旦在源对象的参数未知接收到了其他类型的参数，会尝试类型转换。如果是数组类型的话，类型转换的结果是将每个数组成员的值作为属性键值，将数组成员在数组中的位置作为属性键名。多个数组组成参数一同传入的话还会造成覆盖。具体例子如下：
+    ```js
+    Object.assign([1, 2, 3], [4, 5])
+    // [4, 5, 3]
+    ```
+    上面代码中，`assign`把数组视为属性名为 `0、1、2` 的对象，因此源数组的 `0` 号属性`4`覆盖了目标数组的 `0` 号属性`1`。
+    7. `Object.assign`只能将属性值进行复制，如果属性值是一个`get`（取值函数）的话，那么会先求值，然后再复制。
+    ```js
+    // 源对象
+    const source = {
+    //属性是取值函数
+    get foo(){return 1}
+    };
+    //目标对象
+    const target = {};
+    Object.assign(target,source);
+    //{foo ; 1}  此时foo的值是get函数的求值结果
+    ```
+2. `Object.assign`方法的常见用途
+    1. 为对象添加属性
+    ```js
+    // 为对象Point类的实例对象添加属性x和属性y
+    class Point{
+        constructor(x,y){
+            Object.assign(this,{x,y});
+        }
+    }
+    ```
+    2. 为对象添加方法
+    ```js
+    // 方法也是对象
+    // 将两个方法添加到类的原型对象上
+    // 类的实例会有这两个方法
+    Object.assign(SomeClass.prototype,{
+        someMethod(arg1,arg2){...},
+        anotherMethod(){...}
+    });
+    ```
+    3. 克隆对象
+    ```js
+    //克隆对象的方法
+    function clone(origin){
+        //获取origin的原型对象
+        let originProto = Obejct.getPrototypeOf(origin);
+        //根据原型对象，创建新的空对象，再assign
+        return Object.assign(Object.create(originProto),origin);
+    }
+    ```
+    4. 为属性指定默认值
+    ```js
+    // 默认值对象
+    const DEFAULTS = {
+    logLevel : 0,
+    outputFormat : 'html'
+    };
+    
+    // 利用assign同名属性会覆盖的特性，指定默认值，如果options里有新值的话，会覆盖掉默认值
+    function processContent(options){
+    options = Object.assign({},DEFAULTS,options);
+    console.log(options);
+    //...
+    }
+    ```
+    处于`assign`浅拷贝的顾虑，`DEFAULTS`对象和`options`对象此时的值最好都是简单类型的值，否则函数会失效。
+    ```js
+    const DEFAULTS = {
+    url: {
+        host: 'example.com',
+        port: 7070
+    },
+    };
+    
+    processContent({ url: {port: 8000} })
+    // {
+    //   url: {port: 8000}
+    // }
+    ```
+    上面的代码，由于`url`是对象类型，所以默认值的`url`被覆盖掉了，但是内部缺少了`host`属性，形成了一个bug
+3. 本项目中需求：动态给对象赋值，减少代码量，利于维护
+4. 代码实现：
+```js
+export default {
+      data () {
+    return {
+      searchParams:
+        // 带给服务器的参数
+        {
+          category1Id: '', // 一级分类 id
+          category2Id: '', // 二级分类 id
+          category3Id: '', // 三级分类 id
+          categoryName: '', // 分类名称
+          keyword: '', // 关键字
+          order: '', // 排序
+          pageNo: 1, // 分页器参数：当前是第几页
+          pageSize: 10, // 每一页展示数据个数
+          props: [''], // 平台售卖属性的参数
+          trademark: '' // 品牌
+        }
+    }
+  },
+    beforeMount () {
+    // 发请求之前要给服务器参数 searchParams
+    // Object.assign 合并对象
+    Object.assign(this.searchParams, this.$route.query, this.$route.params)
+  }
+}
+```
+
+### 面包屑
+1. 控制点击删除分类面包屑后，路由跳转和页面显示
+	1. 路由跳转
+		1. 在点击删除面包屑后，需要删除路由的 query 参数，保留 params 参数
+		2. 实现：
+		```js
+		if (this.$route.params) {
+			this.$router.push({
+				name: 'Search',
+				params: this.$route.params
+			})
+		}
+		```
+	2. 页面显示
+		1. 在点击删除面包屑后，清除请求参数，因为请求参数是可选参数，所以把清除的参数都设为 undefined，减少服务器请求压力
+		2. 实现：
+		```js
+		export default {
+			data() {
+				return {
+					params: {
+						// 带给服务器的数据是可有可无的，如果属性值为空字符串还是把相应字段带给服务器
+						// 此时赋值为 undefined
+						category1Id: undefined, // 一级分类 id
+						category2Id: undefined, // 二级分类 id
+						category3Id: undefined, // 三级分类 id
+						keyword: undefined, // 关键字
+						categoryName: undefined // 分类名称
+					}
+				}
+			}
+		}
+		```
+		```js
+		// 清空前一次的参数
+		Object.assign(this.searchParams, this.params)
+        // 向服务器发请求，因为 watch 监听 route 变化，所以不需要再次发请求
+		```
+		3. 方法总代码：
+		```js
+		// 删除分类名
+		removeCategoryName () {
+			// 清空前一次的参数
+			Object.assign(this.searchParams, this.params)
+			// 向服务器发请求，因为 watch 监听 route 变化，所以不需要再次发请求
+			// 地址栏也需要修改，进行路由跳转，跳转到自己这里
+			// 严谨：本意是删除 query，不要顺带把 params 也删除
+			if (this.$route.params) {
+				this.$router.push({
+				name: 'Search',
+				params: this.$route.params
+				})
+			}
+		}
+		```
+2. 面包屑处理关键字
+	1. 路由跳转
+		1. 在点击删除面包屑后，需要删除路由的 params 参数，保留 query 参数
+		2. 实现：
+		```js
+		if (this.$route.query) {
+			this.$router.push({
+				name: 'Search',
+				query: this.$route.query
+			})
+		}
+		```
+	2. 页面显示
+		1. 在点击删除面包屑后，清除请求参数，因为请求参数是可选参数，所以把清除的参数都设为 undefined，减少服务器请求压力
+		2. 实现：
+		```js
+		this.searchParams.keyword = undefined
+		```
+	3. 实现总代码：
+	```js
+	    // 删除关键字
+    removeKeyword () {
+      // 给服务器带的参数 searchParams 的 keyword 清空
+      this.searchParams.keyword = undefined
+      // 地址栏也需要修改，进行路由跳转，跳转到自己这里
+      // 严谨：本意是删除 query，不要顺带把 params 也删除
+      if (this.$route.query) {
+        this.$router.push({
+          name: 'Search',
+          query: this.$route.query
+        })
+      }
+    }
+	```
+	4. 清除文本框内容
+		1. 当面包屑中的关键字清除后，需要让兄弟组件 `Header` 组件中的关键字清除 => 组件通信
+		2. 全局事件总线 `eventBus`
+		3. `$bus`使用
+			1. main.js 挂载 `$bus`
+			```js
+			new Vue({
+				beforeCreate () {
+					// 配置全局事件总线 $bus
+					Vue.prototype.$bus = this
+				}
+			}).$mount('#app')
+			```
+			2. `$emit`发请求
+			```js
+			// 清除兄弟组件 Header 中关键字
+			this.$bus.$emit('clear')
+			```
+			3. `$on`接收
+			```js
+			  mounted () {
+				// 通过全局事件总线清除关键字
+				this.$bus.$on('clear', () => {
+				this.keyword = ''
+				})
+			}
+			```
+3. 面包屑处理品牌信息
+	1. 品牌信息在子组件中，发送请求在父组件中，需要子传父 => 自定义事件
+		1. 子组件 `$emit`
+		```js
+		  methods: {
+			// 品牌的事件处理函数
+			trademarkHandler (trademark) {
+			// 点击品牌，整理参数，向服务器发送请求获取响应数据
+			// 父组件发请求，子组件传值
+			// 自定义事件
+			this.$emit('trademarkInfo', trademark)
+			}
+		}
+		```
+		2. 父组件 自定义事件
+		```html
+		<SearchSelector @trademarkInfo="trademarkInfo"/>
+		```
+		```js
+		// 自定义事件回调
+		trademarkInfo (trademark) {
+			// 整理品牌字段参数
+			// 服务器请求字段 trademark 需要字符串拼接
+			this.searchParams.trademark = `${trademark.tmId}:${trademark.tmName}`
+			// 整理参数后再次发送请求
+			this.getData()
+		}
+		```
+	2. 点击删除面包屑
+	```html
+	<!-- 品牌的面包屑 -->
+	<!-- split(':')[1] => 用':'分割成两个字符串，取第二个 -->
+	<li class="with-x" v-if="searchParams.trademark">{{searchParams.trademark.split(':')[1]}}<i @click="removeTrademark">×</i></li>
+	```
+	```js
+	// 移除品牌面包屑
+    removeTrademark () {
+      this.searchParams.trademark = undefined
+      this.getData()
+    }
+	```
+4. 面包屑处理平台售卖属性
+	1. 子 -> 父传值，需要传两个参数：1 => (属性 id，属性名)，2 => 点击的属性值
+	2. 整理参数格式
+	```js
+	const props = `${attr.attrId}:${attrValue}:${attr.attrName}`
+	```
+	3. `props` 是一个数组，需要去重，防止添加多个标签
+	```js
+	// 数组去重
+	if (this.searchParams.props.indexOf(props) === -1) {
+		this.searchParams.props.push(props)
+	}
+	```
+	4. 因为可能会点击多个属性值，所以面包屑的展示不能用 `v-if`，要用 `v-for`，使用`split`裁剪属性值
+	```html
+	<!-- 平台售卖属性值的展示 -->
+	<li class="with-x" v-for="(attrValue, index) in searchParams.props" :key="index">{{attrValue.split(':')[1]}}<i @click="removeAttr(index)">×</i></li>
+	```
+	5. 删除面包屑时需要传递 `index` 参数，使用`splice`方法去除对应的数据
+	```js
+	// 整理参数
+	this.searchParams.props.splice(index, 1)
+	```
