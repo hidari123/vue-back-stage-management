@@ -29,25 +29,23 @@
         <div class="details clearfix">
           <div class="sui-navbar">
             <div class="navbar-inner filter">
-                <!-- 价格结构 -->
+                <!-- 排序结构 -->
               <ul class="sui-nav">
-                <li class="active">
-                  <a href="#">综合</a>
+                <li :class="{active: isOne}" @click="changeOrder('1')">
+                  <a>综合<span
+                      v-show="isOne"
+                      class="iconfont"
+                      :class="{ 'icon-UP': isAsc, 'icon-DOWN': isDesc }"
+                    ></span
+                  ></a>
                 </li>
-                <li>
-                  <a href="#">销量</a>
-                </li>
-                <li>
-                  <a href="#">新品</a>
-                </li>
-                <li>
-                  <a href="#">评价</a>
-                </li>
-                <li>
-                  <a href="#">价格⬆</a>
-                </li>
-                <li>
-                  <a href="#">价格⬇</a>
+                <li :class="{active: isTwo}" @click="changeOrder('2')">
+                  <a>价格<span
+                      v-show="isTwo"
+                      class="iconfont"
+                      :class="{ 'icon-UP': isAsc, 'icon-DOWN': isDesc }"
+                    ></span
+                  ></a>
                 </li>
               </ul>
             </div>
@@ -58,7 +56,10 @@
               <li class="yui3-u-1-5" v-for="good in goodsList" :key="good.id">
                 <div class="list-wrap">
                   <div class="p-img">
-                    <a href="item.html" target="_blank"><img :src="good.defaultImg" /></a>
+                      <!-- 路由跳转带商品 id -->
+                      <router-link :to="`/detail/${good.id}`">
+                        <img :src="good.defaultImg" />
+                      </router-link>
                   </div>
                   <div class="price">
                     <strong>
@@ -81,35 +82,7 @@
             </ul>
           </div>
           <!-- 分页器 -->
-          <div class="fr page">
-            <div class="sui-pagination clearfix">
-              <ul>
-                <li class="prev disabled">
-                  <a href="#">«上一页</a>
-                </li>
-                <li class="active">
-                  <a href="#">1</a>
-                </li>
-                <li>
-                  <a href="#">2</a>
-                </li>
-                <li>
-                  <a href="#">3</a>
-                </li>
-                <li>
-                  <a href="#">4</a>
-                </li>
-                <li>
-                  <a href="#">5</a>
-                </li>
-                <li class="dotted"><span>...</span></li>
-                <li class="next">
-                  <a href="#">下一页»</a>
-                </li>
-              </ul>
-              <div><span>共10页&nbsp;</span></div>
-            </div>
-          </div>
+          <pagination :pageNo='searchParams.pageNo' :pageSize='searchParams.pageSize' :total='total' :continues='5' @getPageNo='getPageNo'/>
         </div>
       </div>
     </div>
@@ -118,7 +91,7 @@
 
 <script>
 // 把仓库中的数据映射成组件身上的数据
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import SearchSelector from './SearchSelector/SearchSelector'
 export default {
   name: 'Search',
@@ -132,7 +105,7 @@ export default {
           category3Id: '', // 三级分类 id
           categoryName: '', // 分类名称
           keyword: '', // 关键字
-          order: '', // 排序
+          order: '1:desc', // 排序：初始状态 => 综合，降序
           pageNo: 1, // 分页器参数：当前是第几页
           pageSize: 10, // 每一页展示数据个数
           props: [''], // 平台售卖属性的参数
@@ -180,7 +153,22 @@ export default {
     ...mapGetters({
       // 重命名需要使用对象
       goodsList: 'Search/goodsList'
-    })
+    }),
+    ...mapState('Search', {
+      total: state => state.searchList.total
+    }),
+    isOne () {
+      return this.searchParams.order.indexOf('1') !== -1
+    },
+    isTwo () {
+      return this.searchParams.order.indexOf('2') !== -1
+    },
+    isAsc () {
+      return this.searchParams.order.indexOf('asc') !== -1
+    },
+    isDesc () {
+      return this.searchParams.order.indexOf('desc') !== -1
+    }
   },
   methods: {
     // 向服务器发请求，获取 search 模块数据 => 根据参数不同，返回不同数据
@@ -253,6 +241,35 @@ export default {
       // 整理参数
       this.searchParams.props.splice(index, 1)
       // 发送请求
+      this.getData()
+    },
+    // 排序
+    changeOrder (flag) {
+      // flag => 标记，代表用户电机的是综合还是价格
+      // 起始状态
+      const originFlag = this.searchParams.order.split(':')[0]
+      // 起始排序顺序
+      const originSort = this.searchParams.order.split(':')[1]
+      // 准备一个新的 order 的属性值
+      let newOrder = ''
+      // 点击的是 '综合'
+      if (flag === originFlag) {
+        // flag === 1
+        console.log(flag)
+        newOrder = `${originFlag}:${originSort === 'desc' ? 'asc' : 'desc'}`
+      } else {
+        // 点击的是价格
+        // flag === 2
+        newOrder = `${flag}:${'desc'}`
+      }
+      console.log(newOrder)
+      // 将新的 order 赋予 searchParams
+      this.searchParams.order = newOrder
+      this.getData()
+    },
+    // 自定义事件的回调函数 => 获取当前页码
+    getPageNo (pageNo) {
+      this.searchParams.pageNo = pageNo
       this.getData()
     }
   }

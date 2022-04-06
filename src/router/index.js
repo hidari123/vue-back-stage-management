@@ -57,7 +57,12 @@ const router = new VueRouter({
   // history 模式
   // hash模式的原理是依赖hashchange（地址的变化带动内容的变化）有#号，丑，不优雅
   mode: 'history',
-  routes
+  routes,
+  // 滚动行为
+  scrollBehavior (to, from, savedPosition) {
+    // 滚动条在最顶部
+    return { y: 0 }
+  }
 })
 
 export default router

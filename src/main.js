@@ -8,6 +8,8 @@ import TypeNav from '@/components/TypeNav'
 import '@/mock/mockServe'
 // 注册轮播图组件
 import Carousel from '@/components/Carousel'
+// 注册分页器
+import Pagination from '@/components/Pagination'
 
 // Import Swiper styles
 import 'swiper/css/swiper.css'
@@ -15,6 +17,7 @@ import 'swiper/css/swiper.css'
 // 注册组件
 Vue.component(TypeNav.name, TypeNav)
 Vue.component(Carousel.name, Carousel)
+Vue.component(Pagination.name, Pagination)
 
 Vue.config.productionTip = false
 

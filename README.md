@@ -199,9 +199,17 @@ this.$route.query.id
         }
         ```
 
-### 三级联动组件
-- 由于三级联动，在 Home, Search, Detail, 把三级联动注册为全局组件
+### 注册组件
+- 注册为全局组件
 - 好处：注册一次，可以在项目中任意地方使用
+- 实现：
+```js
+// main.js
+// 注册三级联动组件 --- 全局组件
+import TypeNav from '@/components/TypeNav'
+// 注册组件
+Vue.component(TypeNav.name, TypeNav)
+```
 
 ### axios 二次封装
 1. 为什么要二次封装 axios？
@@ -1341,4 +1349,165 @@ export default {
 	```js
 	// 整理参数
 	this.searchParams.props.splice(index, 1)
+	```
+
+	### 排序
+	1. 需求：点击“综合”排序，点击“价格”排序
+	2. 分析：后台处理排序，传递参数，控制箭头的显示与隐藏
+	3. 实现：
+		1. 控制点击的是哪个按钮，添加 `class = 'active'` => `searchParams.order`传参为1 => 综合，为2 => 价格，计算属性
+		```js
+		isOne () {
+			return this.searchParams.order.indexOf('1') !== -1
+		},
+			isTwo () {
+			return this.searchParams.order.indexOf('2') !== -1
+		}
+		```
+		2. 控制箭头的显示和隐藏 => `v-show`，`iconfont`，计算属性判断传参
+		```js
+		isAsc () {
+			return this.searchParams.order.indexOf('asc') !== -1
+		},
+		isDesc () {
+			return this.searchParams.order.indexOf('desc') !== -1
+		}
+		```
+		3. 传递参数
+			1. 判断传入的 flag 和 后台 order 中的 flag 是否一致 => 如果一致，是 desc 变为 asc；是 asc 变为 desc
+			2. 不一致，默认传入 desc
+	4. 代码：
+	```html
+	<!-- 排序结构 -->
+	<ul class="sui-nav">
+		<li :class="{active: isOne}" @click="changeOrder('1')">
+			<a>综合<span
+				v-show="isOne"
+				class="iconfont"
+				:class="{ 'icon-UP': isAsc, 'icon-DOWN': isDesc }"
+			></span
+			></a>
+		</li>
+		<li :class="{active: isTwo}" @click="changeOrder('2')">
+			<a>价格<span
+				v-show="isTwo"
+				class="iconfont"
+				:class="{ 'icon-UP': isAsc, 'icon-DOWN': isDesc }"
+			></span
+			></a>
+		</li>
+	</ul>
+	```
+	```js
+	    // 排序
+    changeOrder (flag) {
+      // flag => 标记，代表用户电机的是综合还是价格
+      // 起始状态
+      const originFlag = this.searchParams.order.split(':')[0]
+      // 起始排序顺序
+      const originSort = this.searchParams.order.split(':')[1]
+      // 准备一个新的 order 的属性值
+      let newOrder = ''
+      // 点击的是 '综合'
+      if (flag === originFlag) {
+        // flag === 1
+        console.log(flag)
+        newOrder = `${originFlag}:${originSort === 'desc' ? 'asc' : 'desc'}`
+      } else {
+        // 点击的是价格
+        // flag === 2
+        newOrder = `${flag}:${'desc'}`
+      }
+      console.log(newOrder)
+      // 将新的 order 赋予 searchParams
+      this.searchParams.order = newOrder
+      this.getData()
+    }
+	```
+
+### 分页器
+1. 需求：展示每页数据条数，总数，当前页，当前页前后连续页码展示
+2. 传参：`pageNo`, `pageSize`, `total`, `continues` => 连续页码数
+3. 自定义分页器：在开发时先自定义数据，成功后再向服务器发送数据
+4.  - Math.ceil() => 向上取整
+	- Math.floor() => 向下取整
+	 - Math.floor()容易出现精度问题，举个最简单例子:
+        - 对小数 8.54 保留两位小数(虽然它已经保留了 2 位小数)
+        - Math.floor(8.54*100)/100 // 输出结果为 8.53, 注意是 8.53 而不是 8.54
+		- 所以这种函数慎用
+	- Math.round() => 四舍五入
+5. 重点：算出连续页码起始和结束
+	1. 计算属性
+	2. 逻辑：如果总页数小于 `continues`，显示全部页数；如果总页数大于`continues`，显示指定页数；如果起始页小于1 => 显示 1-5，如果结束页大于总页数，显示总页数
+	3. 为了方便`v-for`显示页码，计算属性最后返回数组
+		- `v-for`和`v-if`不能同时用，`v-for`优先级更高
+	4. 因为用到的props数值较多，写this太麻烦，采用解构赋值
+	```js
+	const { continues, totalPage, pageNo } = this
+	```
+	5. 实现：
+	```js
+    // 计算连续页码的起始和结束
+    startNumAndEndNum () {
+      const { continues, totalPage, pageNo } = this
+      // 定义两个变量存储起始和结束数字
+      let start = 0
+      let end = 0
+      // 定义一个数组存储连续页码
+      const continuesPage = []
+      // 连续页码数为5 => 至少五页，不正常现象 => 总页数少于5
+      if (continues > totalPage) {
+        start = 1
+        end = totalPage
+      } else {
+        // 总页数大于5
+        // 起始
+        start = pageNo - parseInt(continues / 2)
+        // 结束
+        end = pageNo + parseInt(continues / 2)
+        // 如果 start 为 0 或 负数
+        if (start < 1) {
+          start = 1
+          end = continues
+        }
+        // 如果 end 比总页码大
+        if (end > totalPage) {
+          start = totalPage - continues + 1
+          end = totalPage
+        }
+      }
+      while (start <= end) {
+        continuesPage.push(start++)
+      }
+      return continuesPage
+    }
+	```
+6. 动态展示：
+	1. 需求：起始页 > 1 && 结束页 < 总页数时展示首页和尾页
+	2. 实现：`v-if`
+	3. 代码：
+	```html
+	<template v-if="startNumAndEndNum[0] > 1">
+		<button>1</button>
+		<button>···</button>
+	</template>
+	<template v-if="startNumAndEndNum[startNumAndEndNum.length - 1] < this.totalPage">
+		<button>···</button>
+		<button>{{totalPage}}</button>
+	</template>
+	```
+7. 请求接口，传递参数 => 子传父
+	1. 自定义事件：
+	```js
+	@getPageNo='getPageNo'
+
+	// 自定义事件的回调函数 => 获取当前页码
+    getPageNo (pageNo) {
+      this.searchParams.pageNo = pageNo
+      this.getData()
+    }
+	```
+	2. `$emit`传参
+	```html
+	<button @click="$emit('getPageNo', totalPage)" :class="{active: pageNo === totalPage}">{{totalPage}}</button>
 	```
