@@ -1,11 +1,12 @@
 <template>
   <div class="spec-preview">
     <img :src="imgObj.imgUrl" />
-    <div class="event"></div>
-    <div class="big">
+    <div class="event" @mousemove="handler"></div>
+    <div class="big" ref="big">
       <img :src="imgObj.imgUrl" />
     </div>
-    <div class="mask"></div>
+    <!-- 遮罩层 -->
+    <div class="mask" ref="mask"></div>
   </div>
 </template>
 
@@ -21,6 +22,32 @@ export default {
   computed: {
     imgObj () {
       return this.skuImageList[this.currentIndex] || {}
+    }
+  },
+  mounted () {
+    // 全局事件总线，获取兄弟组件传递过来的索引值
+    this.$bus.$on('getIndex', (index) => {
+      // 修改当前响应式数据
+      this.currentIndex = index
+    })
+  },
+  methods: {
+    handler (event) {
+      const mask = this.$refs.mask
+      const big = this.$refs.big
+      let left = event.offsetX - mask.offsetWidth / 2
+      let top = event.offsetY - mask.offsetHeight / 2
+      // 约束范围
+      if (left <= 0) left = 0
+      if (left >= mask.offsetWidth) left = mask.offsetWidth
+      if (top <= 0) top = 0
+      if (top >= mask.offsetHeight) top = mask.offsetHeight
+      // 修改元素的 left | top 属性值
+      mask.style.left = left + 'px'
+      mask.style.top = top + 'px'
+      // 方向相反 => 设置为负
+      big.style.left = -2 * left + 'px'
+      big.style.top = -2 * top + 'px'
     }
   }
 }

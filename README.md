@@ -9,7 +9,7 @@
     - [route 动态引入：](#route-%E5%8A%A8%E6%80%81%E5%BC%95%E5%85%A5)
     - [`Footer`显示和隐藏：](#footer%E6%98%BE%E7%A4%BA%E5%92%8C%E9%9A%90%E8%97%8F)
     - [路由传参：](#%E8%B7%AF%E7%94%B1%E4%BC%A0%E5%8F%82)
-    - [三级联动组件](#%E4%B8%89%E7%BA%A7%E8%81%94%E5%8A%A8%E7%BB%84%E4%BB%B6)
+    - [注册组件](#%E6%B3%A8%E5%86%8C%E7%BB%84%E4%BB%B6)
     - [axios 二次封装](#axios-%E4%BA%8C%E6%AC%A1%E5%B0%81%E8%A3%85)
     - [vuex模块化](#vuex%E6%A8%A1%E5%9D%97%E5%8C%96)
     - [js => 一级分类动态添加背景色](#js--%E4%B8%80%E7%BA%A7%E5%88%86%E7%B1%BB%E5%8A%A8%E6%80%81%E6%B7%BB%E5%8A%A0%E8%83%8C%E6%99%AF%E8%89%B2)
@@ -27,6 +27,14 @@
     - [页面中多次请求数据](#%E9%A1%B5%E9%9D%A2%E4%B8%AD%E5%A4%9A%E6%AC%A1%E8%AF%B7%E6%B1%82%E6%95%B0%E6%8D%AE)
     - [Object.assign()](#objectassign)
     - [面包屑](#%E9%9D%A2%E5%8C%85%E5%B1%91)
+    - [分页器](#%E5%88%86%E9%A1%B5%E5%99%A8)
+    - [放大镜](#%E6%94%BE%E5%A4%A7%E9%95%9C)
+    - [正则](#%E6%AD%A3%E5%88%99)
+    - [购物车](#%E8%B4%AD%E7%89%A9%E8%BD%A6)
+      - [设定购物车的数量加减](#%E8%AE%BE%E5%AE%9A%E8%B4%AD%E7%89%A9%E8%BD%A6%E7%9A%84%E6%95%B0%E9%87%8F%E5%8A%A0%E5%87%8F)
+      - [加入购物车vuex返回数据](#%E5%8A%A0%E5%85%A5%E8%B4%AD%E7%89%A9%E8%BD%A6vuex%E8%BF%94%E5%9B%9E%E6%95%B0%E6%8D%AE)
+      - [购物车路由跳转携带多数据 => 会话存储](#%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%B7%AF%E7%94%B1%E8%B7%B3%E8%BD%AC%E6%90%BA%E5%B8%A6%E5%A4%9A%E6%95%B0%E6%8D%AE--%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8)
+      - [uuid游客身份获取购物车数据](#uuid%E6%B8%B8%E5%AE%A2%E8%BA%AB%E4%BB%BD%E8%8E%B7%E5%8F%96%E8%B4%AD%E7%89%A9%E8%BD%A6%E6%95%B0%E6%8D%AE)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -304,6 +312,21 @@ export default {
   // 可以书写业务逻辑, 但是不能修改 state
   actions: {
     // 提交 mutation
+	// {commit} 解构赋值，相当于 => 
+	/* 
+	add(context) {
+		context.commit('add')
+	}
+	*/
+	/*
+	 context: {
+        state,   等同于store.$state，若在模块中则为局部状态
+        rootState,   等同于store.$rootState,只存在模块中
+        commit,   等同于store.$commit
+        dispatch,   等同于store.$dispatch
+        getters   等同于store.$getters
+	}
+	*/
     add ({ commit }) {
       commit('add')
     }
@@ -720,7 +743,11 @@ const mySwiper = new Swiper('.swiper-container', {
     navigation: {
         nextEl: '.swiper-button-next',
         prevEl: '.swiper-button-prev'
-    }
+    },
+	// 显示几个图片
+	slidesPerView: 3,
+	// 每次切换图片的个数
+	slidesPerGroup: 3
 })
 ```
 5. mounted 中放置 swiper 失效
@@ -1511,3 +1538,217 @@ export default {
 	```html
 	<button @click="$emit('getPageNo', totalPage)" :class="{active: pageNo === totalPage}">{{totalPage}}</button>
 	```
+
+### 放大镜
+1. 需求：鼠标移动，显示对应的放大效果
+2. 分析：鼠标移动时，遮罩层移动，放大镜移动与遮罩层移动一致
+3. 原理：
+	1. 鼠标移动传递默认事件 `event` 包含移动距离 `offsetX`, `offsetY`
+	2. `mask` DOM元素有`offsetWidth`和`offsetHeight`属性，为DOM元素的长和宽
+	3. 遮罩层偏移量为 `offsetX - mask.offsetWidth`, `offsetY - mask.offsetHeight`
+	4. 如果遮罩层偏移量小于`0`或者大于`mask`DOM元素`宽度（长度）`，则设为`0`或`mask`DOM元素`宽度（长度）`
+	5. `big` 大小设置为 `200%`
+	6. `big` 设置`left`和`width`为`-2`倍（反向移动，`left`和`width`为距离DOM元素的偏移量，鼠标下移需要`big`上移才能显示相同位置，如果鼠标下移，`big`也下移，显示的还是同一位置）
+4. 代码：
+```html
+<div class="spec-preview">
+	<img :src="imgObj.imgUrl" />
+	<div class="event" @mousemove="handler"></div>
+	<div class="big" ref="big">
+		<img :src="imgObj.imgUrl" />
+	</div>
+	<!-- 遮罩层 -->
+	<div class="mask" ref="mask"></div>
+</div>
+```
+```js
+handler (event) {
+	const mask = this.$refs.mask
+	const big = this.$refs.big
+	let left = event.offsetX - mask.offsetWidth / 2
+	let top = event.offsetY - mask.offsetHeight / 2
+	// 约束范围
+	if (left <= 0) left = 0
+	if (left >= mask.offsetWidth) left = mask.offsetWidth
+	if (top <= 0) top = 0
+	if (top >= mask.offsetHeight) top = mask.offsetHeight
+	// 修改元素的 left | top 属性值
+	mask.style.left = left + 'px'
+	mask.style.top = top + 'px'
+	// 方向相反 => 设置为负
+	big.style.left = -2 * left + 'px'
+	big.style.top = -2 * top + 'px'
+}
+```
+
+### 正则
+1. 正则表达式元字符的讲解：
+    - `.`   匹配除换行符以外的任意字符
+    - `\w`  匹配数字或字母或下划线或汉字
+    - `\s`  匹配任意的空白符
+    - `\d`  匹配数字
+    - `\b`  匹配单词的开始或结束
+    - `^`   匹配字符串的开始
+	- `$`   匹配字符串的结束
+2. 常用的限定符：
+    - `*`   重复零次或更多次
+    - `+`   重复一次或更多次
+    - `?`   重复零次或一次
+   - `{n}`  重复n次
+   - `{n,}` 重复n次或更多次
+   - `{n,m}`   重复n次到m次
+3. 正则的反义
+    - `\W`  匹配任意不是字母，数字，下划线，汉字的字符
+    - `\S`  匹配任意不是空白符的字符
+    - `\D`  匹配任意非数字的字符
+    - `\B`  匹配不是单词开头或结束的位置
+    - `[^x]`    匹配除了`x`以外的任意字符
+    - `[^aeiou]`   匹配除了`aeiou`这几个字母以外的任意字符（中括号的话就代表指定一个范围， 除了范围以外的任何字符都可以进行匹配）
+4. 解释：`<a [^>]+>`    匹配用尖括号括起来的以`a`开头的字符串
+
+### 购物车
+#### 设定购物车的数量加减
+1. 需求：点击输入框输入想要购买的数量，排除错误输入
+2. 原理：string字符串 * 1 得到的是 NaN，输入小数需要变为整数
+3. 实现：
+```js
+// 表单元素修改产品个数
+changeSkuNum (event) {
+	// 用户输入的文本 * 1，如果不是数字 会变成 NaN
+	// 文本框 type = number 可以被绕过进行输入提交，也可以输入小鼠，所以不可以
+	const value = event.target.value * 1
+	// 如果输入的是字符串或者小于 1 的数
+	if (isNaN(value) || value < 1) {
+	this.skuNum = 1
+	} else {
+	// 输入小数需要变为整数
+	this.skuNum = parseInt(this.skuNum)
+	}
+}
+```
+#### 加入购物车vuex返回数据
+1. 需求：加入购物车成功 => 跳转路由，加入购物车失败 => 提示`error`
+2. 原理：
+	1. vuex中`action`是异步函数，返回`promise`
+	2. 使用`try-catch`接收返回的成功 / 失败回调函数
+3. 实现：
+```js
+// 将产品添加到购物车中
+// 因为只接受一个参数，解构赋值
+// { commit } 不用也要写上，否则会报错，传参是第二个参数
+async addOrUpdateShopCart ({ commit }, { skuId, skuNum }) {
+	// 服务器写入数据成功，并没有返回其他数据，只是返回 code === 200，表示成功
+	// 服务器没有返回其余数据，不需要三连环存储数据
+	const res = await reqAddOrUpdateShopCart(skuId, skuNum)
+	if (res.code === 200) {
+	// 服务器加入购物车成功
+	return res
+	} else {
+	// 加入购物车失败
+	return Promise.reject(new Error('failed'))
+	}
+}
+```
+```js
+// 将商品添加到购物车中的回调函数
+async addShopCart () {
+	// 发请求：将产品添加到数据库（通知服务器）
+	// 当前派发了一个 action 也向服务器发请求 判断加入购物车是成功还是失败 但是这个步骤是在vuex中进行的
+	// 调用仓库中的函数，函数有返回值
+	try {
+	// 服务器存储成功：路由跳转
+	await this.$store.dispatch('Detail/addOrUpdateShopCart', { skuId: this.$route.params.skuid, skuNum: this.skuNum })
+	// 路由跳转
+	this.$router.push({
+		name: 'AddCartSuccess'
+	})
+	} catch (error) {
+	// 服务器存储失败：给用户提示
+	console.log(error.message)
+	}
+}
+```
+
+#### 购物车路由跳转携带多数据 => 会话存储
+1. 需求：路由跳转携带多个数据，在浏览器地址中显示不方便
+2. 原理：
+    1. HTML5 新增 => 本地存储`localStorage`，会话存储`sessionStorage`
+    2. 本地存储：持久化的 => 5M
+    3. 会话存储： 非持久 => 会话结束就消失
+    4. 无论是本地存储还是会话存储 => 一般存储字符串
+3. 实现：
+    1. 一些简单的数据 => 通知 query 形式传递给路由组件
+    2. 产品信息的数据，比较复杂的对象形式的 => 会话存储，不持久化，会话结束数据再消失
+    3. 存储的是字符串，需要把对象变成字符串再变回去
+4. 代码：
+```js
+// 会话存储
+sessionStorage.setItem('SKUINFO', JSON.stringify(this.skuInfo))
+// 路由跳转
+this.$router.push({
+    name: 'AddCartSuccess',
+    query: {
+    skuNum: this.skuNum
+    }
+})
+```
+```js
+export default {
+    computed: {
+        skuInfo () {
+        return JSON.parse(sessionStorage.getItem('SKUINFO'))
+        }
+    }
+}
+```
+
+#### uuid游客身份获取购物车数据
+1. uuid 临时游客身份（uuid内置）
+2. 需求：游客访问购物车需要临时身份token，关闭页面后再次打开也能查看上次访问时的购物车
+3. 分析：
+    1. 页面关闭后再次打开可以看到上次访问时的购物车 => 本地存储 localStorage
+    2. 需要临时身份 => uuid生成随机数
+    3. 只请求一次，每次访问时是同一个id => 单例模式
+        1. 单例模式：保证一个类仅有一个实例，并提供一个访问它的全局访问点。
+        2. 核心思想：是用一个变量来标志当前是否已经为某个类创建过对象，如果是，则在下一次获取该类的实例时，直接返回之前创建的对象
+        3. JavaScript实现代码：
+        - ```js
+            //单例模式抽象，分离创建对象的函数和判断对象是否已经创建
+            var getSingle = function (fn) {
+                var result;
+                return function () {
+                    return result || ( result = fn.apply(this, arguments) );
+                }
+            };
+          ```
+          - 形参fn是我们的构造函数，我们只要传入任何自己需要的构造函数，就能生成一个新的惰性单例。比如说传入创建一个女朋友的构造函数，并且调用getSingle(),就能生成一个新的女朋友。如果以后再调getSingle(),也只会返回刚才创建的那个女朋友。至于新女朋友——不存在的。
+        4. 单例常用场景：只需要生成一个唯一对象的时候，比如说页面登录框，只可能有一个登录框，那么你就可以用单例的思想去实现他，当然你不用单例的思想实现也行，那带来的结果可能就是你每次要显示登陆框的时候都要重新生成一个登陆框并显示（耗费性能），或者是不小心显示出了两个登录框。
+        5. 用例：https://blog.csdn.net/a715167986/article/details/115759643
+4. 实现
+```js
+// detail.store.js
+import { getUUID } from '@/utils/uuidToken'
+export default {
+  state: {
+    // 游客临时身份
+    uuid_token: getUUID()
+  }
+}
+```
+```js
+// util/uuidToken.js
+import { v4 as uuidv4 } from 'uuid'
+// 生成一个随机字符串，每次执行不能再发生变化，游客身份持久存储
+export const getUUID = () => {
+  // 先从本地存储获取uuid（看一下里面是否有）
+  let uuidToken = localStorage.getItem('UUIDTOKEN')
+  if (!uuidToken) {
+    // 生成游客临时身份
+    uuidToken = uuidv4()
+    // 本地存储一次
+    localStorage.setItem('UUIDTOKEN', uuidToken)
+  }
+  // 一定要有返回值，不然是 undefined
+  return uuidToken
+}
+```

@@ -70,12 +70,13 @@
             </div>
             <div class="cartWrap">
               <div class="controls">
-                <input autocomplete="off" class="itxt">
-                <a href="javascript:" class="plus">+</a>
-                <a href="javascript:" class="mins">-</a>
+                <input autocomplete="off" class="itxt" v-model="skuNum" @change="changeSkuNum"/>
+                <a href="javascript:" class="plus" @click="skuNum++">+</a>
+                <a href="javascript:" class="mins" @click="skuNum > 1 ? skuNum-- : skuNum">-</a>
               </div>
               <div class="add">
-                <a href="javascript:">加入购物车</a>
+                  <!-- 这里添加购物车，进行路由跳转前，需要请求数据，把购买产品的信息发送到服务器，服务器进行存储 -->
+                <a @click="addShopCart">加入购物车</a>
               </div>
             </div>
           </div>
@@ -335,6 +336,12 @@ export default {
     ImageList,
     Zoom
   },
+  data () {
+    return {
+      // 购买产品的个数
+      skuNum: 1
+    }
+  },
   computed: {
     ...mapGetters({
       // 重命名用对象形式
@@ -358,6 +365,41 @@ export default {
       spuSaleAttrValueList.forEach(item => { item.isChecked = '0' })
       // 改变点击的售卖的值
       spuSaleAttrValue.isChecked = '1'
+    },
+    // 表单元素修改产品个数
+    changeSkuNum (event) {
+      // 用户输入的文本 * 1，如果不是数字 会变成 NaN
+      // 文本框 type = number 可以被绕过进行输入提交，也可以输入小鼠，所以不可以
+      const value = event.target.value * 1
+      // 如果输入的是字符串或者小于 1 的数
+      if (isNaN(value) || value < 1) {
+        this.skuNum = 1
+      } else {
+        // 输入小数需要变为整数
+        this.skuNum = parseInt(this.skuNum)
+      }
+    },
+    // 将商品添加到购物车中的回调函数
+    async addShopCart () {
+      // 发请求：将产品添加到数据库（通知服务器）
+      // 当前派发了一个 action 也向服务器发请求 判断加入购物车是成功还是失败 但是这个步骤是在vuex中进行的
+      // 调用仓库中的函数，函数有返回值
+      try {
+        // 服务器存储成功：路由跳转
+        await this.$store.dispatch('Detail/addOrUpdateShopCart', { skuId: this.$route.params.skuid, skuNum: this.skuNum })
+        // 会话存储
+        sessionStorage.setItem('SKUINFO', JSON.stringify(this.skuInfo))
+        // 路由跳转
+        this.$router.push({
+          name: 'AddCartSuccess',
+          query: {
+            skuNum: this.skuNum
+          }
+        })
+      } catch (error) {
+      // 服务器存储失败：给用户提示
+        console.log(error.message)
+      }
     }
   }
 }

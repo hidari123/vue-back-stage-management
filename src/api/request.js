@@ -7,6 +7,9 @@ import 'nprogress/nprogress.css'
 // nprogress.start 进度条开始
 // nprogress.done 进度条结束
 
+// 引入store
+import store from '@/store'
+
 // 用 axios 对象的 create 创建一个 axios 实例
 const requests = axios.create({
   // 配置对象
@@ -18,6 +21,10 @@ const requests = axios.create({
 requests.interceptors.request.use((config) => {
   // config 配置对象，里面有 headers 请求头属性
   // 进度条开始
+  if (store.state.Detail.uuid_token) {
+    // 给请求头添加字段(userTempId)，字段名和后台一致
+    config.headers.userTempId = store.state.Detail.uuid_token
+  }
   nprogress.start()
   return config
 })
