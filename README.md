@@ -35,6 +35,9 @@
       - [加入购物车vuex返回数据](#%E5%8A%A0%E5%85%A5%E8%B4%AD%E7%89%A9%E8%BD%A6vuex%E8%BF%94%E5%9B%9E%E6%95%B0%E6%8D%AE)
       - [购物车路由跳转携带多数据 => 会话存储](#%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%B7%AF%E7%94%B1%E8%B7%B3%E8%BD%AC%E6%90%BA%E5%B8%A6%E5%A4%9A%E6%95%B0%E6%8D%AE--%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8)
       - [uuid游客身份获取购物车数据](#uuid%E6%B8%B8%E5%AE%A2%E8%BA%AB%E4%BB%BD%E8%8E%B7%E5%8F%96%E8%B4%AD%E7%89%A9%E8%BD%A6%E6%95%B0%E6%8D%AE)
+      - [js 数组遍历some,foreach,map,filter,every对比](#js-%E6%95%B0%E7%BB%84%E9%81%8D%E5%8E%86someforeachmapfilterevery%E5%AF%B9%E6%AF%94)
+      - [修改购物车产品数量](#%E4%BF%AE%E6%94%B9%E8%B4%AD%E7%89%A9%E8%BD%A6%E4%BA%A7%E5%93%81%E6%95%B0%E9%87%8F)
+      - [删除所有选中商品](#%E5%88%A0%E9%99%A4%E6%89%80%E6%9C%89%E9%80%89%E4%B8%AD%E5%95%86%E5%93%81)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -564,6 +567,10 @@ changeIndex (index) {
     location.query = this.$route.query
     this.$router.push(location)
     ```
+4. input按下回车事件
+```js
+@keyup.enter="goSearch"
+```
 
 ### Search 模块中 TypeNav 商品分类菜单过渡动画
 1. 控制 search 模块 type-nav 显示和隐藏
@@ -1750,5 +1757,134 @@ export const getUUID = () => {
   }
   // 一定要有返回值，不然是 undefined
   return uuidToken
+}
+```
+
+#### js 数组遍历some,foreach,map,filter,every对比
+1. [...].some(ck)函数 => 某个一个为true，则为true
+    - 对数组中每个元素执行一次ck函数，知道某个元素返回true，则直接返回true。如果都返回false,则返回false
+    - 检查整个数组中是否有满足ck函数的元素。
+```js
+var result = [1,5,3,6].some(  (v,i)  =>  (v>10) )      //所有元素都不满足，返回result = false
+var result = [10,5,30,60].some(  (v,i)  =>  (v<10) )      //有一个(多个)满足，返回result  = true
+```
+2. [...].foreach(ck)函数 => 循环而已
+    - 每个数组元素都执行一次ck函数，foreach函数无法用break跳出
+```js
+[50, 25, 49].forEach( (v,i) => console.log(v) );
+//50     25      49
+```
+3. [...].map(ck)函数 => 返回每个元素返回值的集合
+    - 每个数组元素都执行一次ck函数，最后返回每次元素执行ck函数后返回值的集合(数组)
+```js
+var newArray = [50,30,40].map( (v,i) => v/10 )       //每个元素除以10，最后返回一个新数组 newArray = [5,3,4]
+```
+4. [...].filter(ck)函数 => 得到返回值为true的元素的集合
+    - 每个数组元素都执行一次ck函数，最后返回每次元素执行ck函数后返回值的为true的元素集合(数组)
+```js
+var newArray = [50,2,60,4,53,15].filter( (v,i) => (v>10) )   //返回数组中大于10的元素新数组  newArray = [50,60,53,15]
+```
+5. [...].every(ck)函数 => 某一个为false，则返回false
+    - 每个数组元素都执行一次ck函数，直到某个元素执行函数ck返回false,则直接返回false,如果全部返回true，则返回true
+```js
+var result = [5,50,35,12,85].every( (v,i) => v<51 )  //返回有一个(多个)大于等于51,则返回 result = false
+var result = [5,50,35,12,85].every( (v,i) => v<100 )  //全部大于51,则返回 result = true
+```
+6. [...].reduce(ck,init) => 依次执行ck(prv.next)
+    - 数组依次执行ck函数。
+```js
+var result = [0,1,2,3]
+restult.reduce((a,b)=> a+b,0)  // 返回 6
+```
+7. 本项目中应用：全选
+```js
+// 判断底部复选框是否勾选，全部产品都选中才勾选
+isAllCheck () {
+    // 遍历数组原理：只要全部元素 isChecked === 1，返回 true，否则返回 false
+    return this.cartList.every(item => item.isChecked === 1)
+}
+```
+
+#### 修改购物车产品数量
+1. 需求：每次修改购物车数量时，重新发送请求，请求修改后的数量（+，-，input）
+2. 原理：
+    1. 传三个参数，第一个是触发方法的类型（+，-，input），第二个+，- => 占位，input把当前文本框中的值（event.target.value）传过去，第三个参数是产品（用来获取id和之前的商品数量）
+    2. 后台数据如果传参正数表示+，负数表示-
+3. 问题：请求回来的数据不准确，虽然也是this.getData()刷新页面，但是由于js单线程，此时异步请求还未发完
+4. 解决：异步请求返回promise对象，刷新页面写在.then()中
+5. 实现：
+```html
+<input autocomplete="off" type="text" minnum="1" class="itxt" :value="cart.skuNum" @change="handler('change', $event.target.value * 1, cart)">
+```
+```js
+// 修改某个产品的个数
+handler (type, disNum, cart) {
+    // type => 区分三个元素
+    // 目前 disNum 形参： + => +1，- => -1，input => 最终值
+    // id => 传递参数
+    // 向服务器发请求修改数量
+    switch (type) {
+    // add
+    case 'add':
+        // 带给服务器变化的数据
+        disNum = 1
+        break
+    case 'minus':
+        // 带给服务器变化的数据
+        // 如果产品个数 <= 1，原封不动给服务器
+        disNum = cart.skuNum > 1 ? -1 : 0
+        break
+    case 'change':
+        if (isNaN(disNum) || disNum < 1) {
+        disNum = 0
+        } else {
+        disNum = parseInt(disNum) - cart.skuNum
+        }
+        break
+    }
+    try {
+    // 派发 action
+    this.$store.dispatch('Detail/addOrUpdateShopCart', { skuId: cart.skuId, skuNum: disNum }).then(() => { this.getData() })
+    } catch (error) {
+    console.log(error)
+    }
+}
+```
+
+#### 删除所有选中商品
+1. `Promise.all(p1, p2, p3,...)`：p1，p2，p3，... => Promise 函数，`Promise.all()`接收一个promise的`iterable`类型（注：Array，Map，Set都属于ES6的iterable类型），并且只返回一个Promise实例，如果全部都成功，`resolve`回调的结果是包含所有成功的promise数组；如果有一个失败，返回失败。这个Promise的`resolve`回调执行是在所有输入的promise的`resolve`回调都结束，或者输入的`iterable`里没有promise了的时候。它的`reject`回调执行是，只要任何一个输入的promise的`reject`回调执行或者输入不合法的promise就会立即抛出错误，并且`reject`的是第一个抛出的错误信息。
+2. promise相关网址：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+3. 需求：删除所有选中的商品，但是后台给的接口只有删除单个商品，需要遍历删除，发送请求
+4. 思路：在仓库中发送请求，`forEach`循环遍历，如果`isChecked === 1`就删除，把函数返回的promise对象`push`进数组，传入`Promise.all()`
+5. 实现：
+```js
+// 删除所有选中的商品
+deleteAllCheckedCart ({ dispatch, getters }) {
+    // context: 小仓库
+    // 获取购物车中全部产品
+    const promiseAll = []
+    getters.cartList.forEach(item => {
+    const promise = item.isChecked === 1 && dispatch('deleteCartListById', item.skuId)
+    promiseAll.push(promise)
+    })
+    // 只要全部 promise 成功返回的是成功的promise数组
+    // 有一个失败返回失败false
+    //   Promise.all(promiseAll).then((values) => {
+    //     console.log(values) // 数组
+    //   })
+    return Promise.all(promiseAll)
+}
+```
+```js
+// 删除所有选中的商品
+// 这个回调函数无法收集到有用数据，后台无接口
+async deleteAllCheckedCart () {
+    try {
+    // 派发一个action
+    await this.$store.dispatch('ShopCart/deleteAllCheckedCart')
+    this.getData()
+    } catch (error) {
+    console.log(error.message)
+    }
 }
 ```
