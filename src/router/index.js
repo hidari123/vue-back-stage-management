@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+// 引入 store
+// import store from '@/store'
 
 Vue.use(VueRouter)
 const routeList = []
@@ -62,6 +64,22 @@ const router = new VueRouter({
   scrollBehavior (to, from, savedPosition) {
     // 滚动条在最顶部
     return { y: 0 }
+  }
+})
+
+// 全局前置守卫
+router.beforeEach((to, from, next) => {
+  const token = sessionStorage.getItem('TOKEN')
+  //   const name = store.state.User.userInfo.name
+  if (token) {
+    // 不能回到 login，停留在首页
+    if (to.path === '/login' || to.path === '/register') {
+      next('/home')
+    } else {
+      next()
+    }
+  } else {
+    next('/login')
   }
 })
 

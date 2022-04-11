@@ -23,6 +23,8 @@ export default {
     this.$store.dispatch('Home/categoryList')
     // banner 轮播图数据
     this.$store.dispatch('Home/getBannerList')
+    // 获取用户信息，在首页展示
+    this.$store.dispatch('User/getUserInfo')
   }
 }
 </script>
