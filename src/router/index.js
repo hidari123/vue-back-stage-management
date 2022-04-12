@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 // 引入 store
-// import store from '@/store'
+import store from '@/store'
 
 Vue.use(VueRouter)
 const routeList = []
@@ -18,8 +18,8 @@ const importAll = (r) => {
 // 1. 路径
 // 2. 是否匹配子级文件
 // 3. 规则
-// 在和 index 同级的文件夹下 不找子级，找 .router.js结尾的文件
-importAll(require.context('./', false, /\.route\.js/))
+// 在和 index 同级的route文件夹下 不找子级，找 .router.js结尾的文件
+importAll(require.context('./route', false, /\.route\.js/))
 
 const routes = [
   ...routeList,
@@ -70,16 +70,29 @@ const router = new VueRouter({
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
   const token = sessionStorage.getItem('TOKEN')
-  //   const name = store.state.User.userInfo.name
+  const name = store.state.User.userInfo.name
   if (token) {
     // 不能回到 login，停留在首页
     if (to.path === '/login' || to.path === '/register') {
       next('/home')
     } else {
-      next()
+      if (name) {
+        next()
+      } else {
+        try {
+          // 获取用户信息，在首页展示
+          store.dispatch('User/getUserInfo')
+          next()
+        } catch (error) {
+          // token 失效获取不到用户信息 => 重新登陆
+          // 清除 token
+          sessionStorage.removeItem('TOKEN')
+          next('/login')
+        }
+      }
     }
   } else {
-    next('/login')
+    next()
   }
 })
 

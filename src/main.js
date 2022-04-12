@@ -10,7 +10,7 @@ import '@/mock/mockServe'
 import Carousel from '@/components/Carousel'
 // 注册分页器
 import Pagination from '@/components/Pagination'
-
+import { MessageBox } from 'element-ui'
 // Import Swiper styles
 import 'swiper/css/swiper.css'
 
@@ -18,7 +18,8 @@ import 'swiper/css/swiper.css'
 Vue.component(TypeNav.name, TypeNav)
 Vue.component(Carousel.name, Carousel)
 Vue.component(Pagination.name, Pagination)
-
+Vue.prototype.$msgbox = MessageBox
+Vue.prototype.$alert = MessageBox.alert
 Vue.config.productionTip = false
 
 new Vue({

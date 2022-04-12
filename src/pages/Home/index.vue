@@ -32,6 +32,8 @@ export default {
   mounted () {
     // floor 数据
     this.$store.dispatch('Home/getFloorList')
+    // 获取用户信息，在首页展示
+    this.$store.dispatch('User/getUserInfo')
   },
   methods: {
   },

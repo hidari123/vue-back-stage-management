@@ -2076,3 +2076,49 @@ async deleteAllCheckedCart () {
     1. 全局守卫
     2. 路由独享守卫
     3. 组件内守卫
+4. 全局前置守卫
+- 如果获取到`token`，没有获取到信息，重新获取信息后再跳转
+- 如果`token`失效，清除`token`，重新登陆
+```js
+// 全局前置守卫
+router.beforeEach((to, from, next) => {
+  const token = sessionStorage.getItem('TOKEN')
+  const name = store.state.User.userInfo.name
+  if (token) {
+    // 不能回到 login，停留在首页
+    if (to.path === '/login' || to.path === '/register') {
+      next('/home')
+    } else {
+      if (name) {
+        next()
+      } else {
+        try {
+          // 获取用户信息，在首页展示
+          store.dispatch('User/getUserInfo')
+          next()
+        } catch (error) {
+          // token 失效获取不到用户信息 => 重新登陆
+          // 清除 token
+          sessionStorage.removeItem('TOKEN')
+          next('/login')
+        }
+      }
+    }
+  } else {
+    next()
+  }
+})
+```
+
+### 全局使用API
+- main.js下挂载到vue原型上
+```js
+// 统一接口 api 文件夹中全部请求函数
+// 统一引入
+import * as API from '@/api'
+new Vue({
+    beforeCreate() {
+        Vue.prototype.$API = API
+    }
+})
+``` 
