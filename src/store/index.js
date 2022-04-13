@@ -7,6 +7,7 @@ import ShopCart from './modules/shopCart.store'
 import User from './modules/user.store'
 import Trade from './modules/trade.store'
 import Order from './modules/order.store'
+import MyOrder from './modules/myOrder.store'
 
 Vue.use(Vuex)
 
@@ -24,6 +25,7 @@ export default new Vuex.Store({
     ShopCart,
     User,
     Trade,
-    Order
+    Order,
+    MyOrder
   }
 })

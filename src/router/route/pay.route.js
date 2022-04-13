@@ -4,5 +4,12 @@ export default {
   meta: {
     show: true
   },
-  component: () => import('@/pages/Pay')
+  component: () => import('@/pages/Pay'),
+  beforeEnter: (to, from, next) => {
+    if (from.path === '/trade') {
+      next()
+    } else {
+      next(false)
+    }
+  }
 }

@@ -56,9 +56,9 @@
               <li class="yui3-u-1-5" v-for="good in goodsList" :key="good.id">
                 <div class="list-wrap">
                   <div class="p-img">
-                      <!-- 路由跳转带商品 id -->
+                      <!-- 路由跳转带商品 id (parmas参数) -->
                       <router-link :to="`/detail/${good.id}`">
-                        <img :src="good.defaultImg" />
+                        <img v-lazy="good.defaultImg" />
                       </router-link>
                   </div>
                   <div class="price">

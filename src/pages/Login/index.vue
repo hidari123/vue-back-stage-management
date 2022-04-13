@@ -93,7 +93,11 @@ export default {
       const userTrue = phone && password
       try {
         userTrue && await this.$store.dispatch('User/UserLogin', { phone, password })
-        userTrue && this.$router.push('/home')
+        // 判断路由中是否包含 query参数
+        // 有query => query参数指定路由
+        // 没有query => home
+        const toPath = this.$route.query.redirect || '/home'
+        userTrue && this.$router.push(toPath)
       } catch (error) {
         console.log(error)
       }

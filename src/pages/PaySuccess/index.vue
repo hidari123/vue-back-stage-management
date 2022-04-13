@@ -19,7 +19,17 @@
 
 <script>
 export default {
-  name: 'PaySuccess'
+  name: 'PaySuccess',
+  // 组件内守卫
+  beforeRouteEnter (to, from, next) {
+    // 在渲染该组件的对应路由 被 confirm 前调用
+    // 不能获取组件实例 this => 因为当守卫执行前，组件实例还未被创建
+    if (from.path === '/pay') {
+      next()
+    } else {
+      next(false)
+    }
+  }
 }
 </script>
 

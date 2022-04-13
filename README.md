@@ -5,6 +5,7 @@
 - [vue-back-stage-management](#vue-back-stage-management)
   - [项目描述](#%E9%A1%B9%E7%9B%AE%E6%8F%8F%E8%BF%B0)
   - [项目配置](#%E9%A1%B9%E7%9B%AE%E9%85%8D%E7%BD%AE)
+  - [账号密码](#%E8%B4%A6%E5%8F%B7%E5%AF%86%E7%A0%81)
   - [业务逻辑：](#%E4%B8%9A%E5%8A%A1%E9%80%BB%E8%BE%91)
     - [route 动态引入：](#route-%E5%8A%A8%E6%80%81%E5%BC%95%E5%85%A5)
     - [`Footer`显示和隐藏：](#footer%E6%98%BE%E7%A4%BA%E5%92%8C%E9%9A%90%E8%97%8F)
@@ -38,6 +39,19 @@
       - [js 数组遍历some,foreach,map,filter,every对比](#js-%E6%95%B0%E7%BB%84%E9%81%8D%E5%8E%86someforeachmapfilterevery%E5%AF%B9%E6%AF%94)
       - [修改购物车产品数量](#%E4%BF%AE%E6%94%B9%E8%B4%AD%E7%89%A9%E8%BD%A6%E4%BA%A7%E5%93%81%E6%95%B0%E9%87%8F)
       - [删除所有选中商品](#%E5%88%A0%E9%99%A4%E6%89%80%E6%9C%89%E9%80%89%E4%B8%AD%E5%95%86%E5%93%81)
+    - [vue 中事件修饰符](#vue-%E4%B8%AD%E4%BA%8B%E4%BB%B6%E4%BF%AE%E9%A5%B0%E7%AC%A6)
+    - [用户登录 => 导航守卫](#%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95--%E5%AF%BC%E8%88%AA%E5%AE%88%E5%8D%AB)
+    - [全局使用API](#%E5%85%A8%E5%B1%80%E4%BD%BF%E7%94%A8api)
+    - [订单支付](#%E8%AE%A2%E5%8D%95%E6%94%AF%E4%BB%98)
+      - [element-ui 局部使用](#element-ui-%E5%B1%80%E9%83%A8%E4%BD%BF%E7%94%A8)
+      - [支付业务【微信支付】](#%E6%94%AF%E4%BB%98%E4%B8%9A%E5%8A%A1%E5%BE%AE%E4%BF%A1%E6%94%AF%E4%BB%98)
+    - [我的订单](#%E6%88%91%E7%9A%84%E8%AE%A2%E5%8D%95)
+    - [图片懒加载](#%E5%9B%BE%E7%89%87%E6%87%92%E5%8A%A0%E8%BD%BD)
+    - [自定义插件](#%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6)
+      - [demo](#demo)
+      - [vee-validate插件：Vue官方提供的一个表单验证的插件](#vee-validate%E6%8F%92%E4%BB%B6vue%E5%AE%98%E6%96%B9%E6%8F%90%E4%BE%9B%E7%9A%84%E4%B8%80%E4%B8%AA%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E7%9A%84%E6%8F%92%E4%BB%B6)
+  - [打包上线](#%E6%89%93%E5%8C%85%E4%B8%8A%E7%BA%BF)
+  - [组件通信方式](#%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -87,6 +101,10 @@
     - 路由跳转：
         - 声明式导航：router-link
         - 编程式导航：push / replace 除了路由跳转，还能做其他业务
+
+## 账号密码
+账号:13700000000
+密码:111111
 
 ## 业务逻辑：
 ### route 动态引入：
@@ -2066,7 +2084,7 @@ async deleteAllCheckedCart () {
     .shift
     ```
 
-### 用户注册
+### 用户登录 => 导航守卫
 1. 阻止form默认提交事件 => `click.prevent`
 ```html
 <button class="btn" @click.prevent="userLogin">登&nbsp;&nbsp;录</button>
@@ -2079,6 +2097,8 @@ async deleteAllCheckedCart () {
 4. 全局前置守卫
 - 如果获取到`token`，没有获取到信息，重新获取信息后再跳转
 - 如果`token`失效，清除`token`，重新登陆
+5. 判断路由中是否包含路径（防止带参数可以跳转）
+- indexOf()
 ```js
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
@@ -2105,10 +2125,73 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
-    next()
+    // 未登录 => 不能去交易相关 | 支付相关（pay | paysuccess） | 个人中心
+    const toPath = to.path
+    if (toPath.indexOf('/trade') !== -1 || toPath.indexOf('/pay') !== -1 || toPath.indexOf('/center') !== -1) {
+        // 重定向 回到未登录时要去的页面
+      next('/login?redirect=' + toPath)
+    } else {
+      next()
+    }
   }
 })
 ```
+```js
+//全局守卫: [后置守卫 => 在路由跳转完毕之后才会执行一次]
+router.afterEach(()=>{
+     console.log('守卫:路由跳转完毕才会执行一次')
+})
+```
+6. 用户未登录情况下点击 交易相关 | 支付相关（pay | paysuccess） | 个人中心 跳转到登录页面，登陆后要回到原来页面
+- login跳转前判断是否携带query参数
+```js
+async userLogin () {
+    const { phone, password } = this
+    const userTrue = phone && password
+    try {
+    userTrue && await this.$store.dispatch('User/UserLogin', { phone, password })
+    // 判断路由中是否包含 query参数
+    // 有query => query参数指定路由
+    // 没有query => home
+    const toPath = this.$route.query.redirect || '/home'
+    userTrue && this.$router.push(toPath)
+    } catch (error) {
+    console.log(error)
+    }
+}
+```
+7. 路由独享守卫：需要在配置路由的地方使用
+    - 导航守卫:
+        全局守卫 => 项目当中有任何路由变化【a->b,b->d】触发。
+        路由独享守卫：专门负责某一个路由
+    1. 用户已经登录了，不应该再访问login【通过什么条件能判断用户登录、未登录】
+    2. 购物车页面 => 交易页面（创建订单）
+    3. 交易页面（创建订单） => 支付页面
+    4. 支付页面 => 支付成功页面
+    - 注意：在history模式下 from 为空 需要加一个页面专门处理401
+    ```js
+    export default {
+        path: '/trade',
+        name: 'Trade',
+        meta: {
+            show: true
+        },
+        component: () => import('@/pages/Trade'),
+        // 路由独享守卫
+        beforeEnter: (to, from, next) => {
+            // history 模式 浏览器直接输入地址相当于重新刷新页面发送请求 from 为空
+            console.log(to.path, from.path)
+            // shopcart => trade
+            if (from.path === '/shopcart') {
+            next()
+            } else {
+            // next(false) => 中断当前导航，如果浏览器的url改变 => url重置到from对应的地址
+            // 停留在当前
+            next(false)
+            }
+        }
+    }
+    ```
 
 ### 全局使用API
 - main.js下挂载到vue原型上
@@ -2122,3 +2205,466 @@ new Vue({
     }
 })
 ``` 
+
+### 订单支付
+#### element-ui 局部使用
+1. react框架:
+UI组件库antd【蚂蚁金服旗下PC端UI组件库】
+antd-mobile【蚂蚁金服旗下的移动端UI组件库】
+
+2. Vue框架:
+element-UI【饿了吗旗下的UI组件库，官方承认的PC组件库插件】
+vant【Vue官方提供移动端UI组件库】
+
+官网地址:https://element.eleme.cn/#/zh-CN
+官网地址：https://youzan.github.io/vant/#/zh-CN/
+
+- 第一步：项目中安装element-ui组件库
+- 第二步：在入口文件引入elementUI组件库
+    - 第一种：全部引入【不采用：因为项目中只是用到一个组件，没必要全都引入进来】
+    - 第二种：按需引入【按照开发需求引入相应的组件，并非全部组件引入】
+- 第三步：按需引入，安装相应的插件
+    - cnpm install babel-plugin-component -D
+    - 文档中说的.babelrc文件，即为babel.config.js文件
+    ```js
+    module.exports = {
+        presets: [
+            '@vue/cli-plugin-babel/preset'
+        ],
+        plugins: [
+            [
+                'component',
+                {
+                    libraryName: 'element-ui',
+                    styleLibraryName: 'theme-chalk'
+                }
+            ]
+        ]
+    }
+    ```
+    - 修改完babel.config.js配置文件以后，项目重启
+- 第四步：按照需求引入相应的组件即可
+    - Vue.component();
+    - Vue.prototype.$xxx = xxx;
+
+#### 支付业务【微信支付】
+1. 使用messageBox显示弹框
+2. 展示二维码 => qrcode插件
+3. 通过qrCode.toDataUrl方法，将字符串转换为加密的在线二维码链接，通过图片进行展示。
+4. 支付时需要不停地向服务器发送请求，获取支付状态
+    1. GET|POST：短轮询，请求发一次，服务器响应一次，结束。
+    2. 第一种做法:前端开启定时器，一直找服务器要用户支付信息【定时器】
+    3. 第二种做法:项目务必要上线 + 和后台紧密配合
+        - 当用户支付成功以后，需要后台重定向到项目某一个路由中，将支付情况通过URL参数形式传给前端，前端获取到服务器返回的参数，就可以判断了。
+5. 实现
+```js
+async open () {
+    // 生成二维码
+    const url = await QRCode.toDataURL(this.payInfo.codeUrl)
+    this.$alert(`<img src=${url} />`, '请微信支付', {
+    dangerouslyUseHTMLString: true,
+    // 居中布局
+    center: true,
+    // 是否显示取消按钮
+    showCancelButton: true,
+    // 取消按钮文本内容
+    cancelButtonText: '支付遇见问题',
+    confirmButtonText: '支付成功',
+    // x号
+    showClose: false,
+    // 关闭弹出框前的回调
+    beforeClose: (type, instance, done) => {
+        // type 区分取消 | 确定按钮
+        // instance 当前组件实例
+        // done 关闭弹出框的方法
+        if (type === 'cancel') {
+        alert('请联系管理员')
+        // 清除定时器
+        clearInterval(this.timer)
+        this.timer = null
+        this.$msgbox.close()
+        } else { // type = 'confirm'
+        if (this.payStatus.code === 205) {
+            // 支付成功
+            // 清除定时器
+            clearInterval(this.timer)
+            this.timer = null
+            done()
+            // 跳转到支付成功页面
+            this.$router.push('/paysuccess')
+        }
+        }
+    }
+    })
+    // 需要知道支付成功 | 失败
+    // 支付成功 => 路由跳转
+    // 支付失败 => 提示信息
+    if (!this.timer) {
+    // 开启定时器
+    this.timer = setInterval(() => {
+        // 发请求获取用户支付状态
+        this.$store.dispatch('Order/getPayStatus', this.orderId)
+        if (this.payStatus.code === 205) {
+        // 支付成功
+        // 清除定时器
+        clearInterval(this.timer)
+        this.timer = null
+        // 保存支付成功返回的code
+        this.code = this.payStatus.code
+        // 关闭弹出框
+        this.$msgbox.close()
+        // 跳转到支付成功页面
+        this.$router.push('/paysuccess')
+        }
+    }, 1000)
+    }
+}
+```
+
+### 我的订单
+1. 子路由
+```js
+export default {
+  path: '/center',
+  name: 'Center',
+  redirect: '/center/myorder',
+  meta: {
+    show: true
+  },
+  component: () => import('@/pages/Center'),
+  children: [
+    {
+      path: 'myorder', // 子组件路径开头不加斜杠
+      component: () => import('@/pages/Center/myOrder')
+    }, {
+      path: 'grouporder', // 子组件路径开头不加斜杠
+      component: () => import('@/pages/Center/groupOrder')
+    }
+  ]
+}
+```
+2. 合并单元格
+- 扫描一遍表格，没有在`arr`数组找到的新元素就放入`arr`数组，如果在`arr`数组里找到了重复的元素，就把他隐藏掉，然后给第一个元素合并数`+1`即可。
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        table {
+            margin: 100px auto;
+            border: 1px solid black;
+            border-spacing: 0
+        }
+        
+        td {
+            border: 1px solid black;
+            border-collapse: collpase;
+        }
+    </style>
+
+</head>
+
+<body>
+    <table class="table table-striped table-sm">
+        <thead>
+            <tr>
+                <th colspan="3">交叉路口名称</th>
+                <th>道路名称</th>
+                <th>顺序</th>
+                <th>路宽</th>
+                <th>车道类型</th>
+                <th>车道方向</th>
+                <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口1</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口1</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口2</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口2</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口2</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+            <tr class="order">
+                <td class="f1" colspan="3">环城南一路与骖鸾路交叉口2</td>
+                <td>兴和路</td>
+                <td>西南到东北</td>
+                <td>3.596</td>
+                <td>机动车道</td>
+                <td>出口道</td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        //利用去重原理
+        var arr = [];
+        var f1 = document.getElementsByClassName("f1");
+        for (let i = 0; i < f1.length; i++) {
+
+            if (arr.indexOf(f1[i].innerHTML) == -1) {
+                arr.push(f1[i].innerHTML);
+                var index = i; //index是第一个元素
+                document.getElementsByClassName("f1")[i].style.borderBottom = 0 + "px";
+            } else {
+                document.getElementsByClassName("f1")[i].style.display = "none"; //隐藏重复的元素
+                document.getElementsByClassName("f1")[index].rowSpan += 1; //删去重复的元素,就给第一个元素的rowspan+1
+            }
+        }
+        console.log(arr);
+    </script>
+
+
+
+</body>
+
+
+
+</html>
+```
+- 效果
+![avatar](https://img-blog.csdnimg.cn/2021040512281091.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQ1MjQxMzU5,size_16,color_FFFFFF,t_70#pic_center)
+![avatar](https://img-blog.csdnimg.cn/20210405122817820.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQ1MjQxMzU5,size_16,color_FFFFFF,t_70#pic_center)
+
+- 本项目中 => `v-if`
+```html
+<td :rowspan="myOrder.orderDetailList.length" width="13%" class="center" v-if="index === 0">
+```
+
+### 图片懒加载
+- vue-lazyload:图片懒加载
+- 图片：比用用户网络不好，服务器的数据没有回来，
+- 不可能让用户看白色，至少有一个默认图片再展示。
+
+### 自定义插件
+#### demo
+```js
+// vue插件一定暴露一个对象
+const myPlugins = {}
+myPlugins.install = function (Vue, options) {
+  // 全局指令
+  Vue.directive(options.name, (element, params) => {
+    element.innerHTML = params.value.toUpperCase()
+    console.log(element, params)
+  })
+}
+
+// 对外暴露组件对象
+export default myPlugins
+```
+```js
+// main.js
+// 引入自定义插件
+import myPlugins from '@/plugins/myPlugins'
+Vue.use(myPlugins, {
+  name: 'upper'
+})
+```
+```vue
+<template>
+  <div class="home">
+  <!-- 使用 -->
+      <h1 v-upper='msg'></h1>
+  </div>
+</template>
+
+<script>
+
+export default {
+  name: 'Home',
+  data () {
+    return {
+      msg: 'abc'
+    }
+  }
+}
+</script>
+```
+#### vee-validate插件：Vue官方提供的一个表单验证的插件
+使用步骤：
+1. 安装vee-valadite，别安装最新版本@2
+2. 在plugins文件夹中创建一个validate.js[专门注册vee-valadite]
+3. 注册插件
+4. 注册插件的时候，用中文，以及需要验证的字段【用中文显示提示形式】
+5. 在入口文件需要引入执行一次
+6. 使用vee-valadiate插件
+```js
+// vee-validate插件：表单验证区域
+import Vue from 'vue'
+import VeeValidate from 'vee-validate'
+// 中文提示信息
+// eslint-disable-next-line camelcase
+import zh_CN from 'vee-validate/dist/locale/zh_CN'
+Vue.use(VeeValidate)
+
+// 表单验证
+VeeValidate.Validator.localize('zh_CN', {
+  messages: {
+    ...zh_CN.messages,
+    is: (field) => `${field}必须与密码相同` // 修改内置规则的 message，让确认密码和密码相同
+  },
+  attributes: {
+    phone: '手机号',
+    code: '验证码',
+    password: '密码',
+    password1: '确认密码',
+    agree: '协议'
+  }
+})
+
+// 自定义校验规则
+VeeValidate.Validator.extend('tongyi', {
+  validate: (value) => {
+    return value
+  },
+  getMessage: (field) => field + '必须同意'
+})
+```
+```html
+<!-- 使用 -->
+<input
+    placeholder="请输入你的验证码"
+    v-model="code"
+    name="code"
+    v-validate="{ required: true, regex: /^\d{6}$/ }"
+    :class="{ invalid: errors.has('code') }"
+/>
+<button style="width: 100px; height:38px" @click="getCode">获取验证码</button>
+<span class="error-msg">{{ errors.first("code") }}</span>
+```
+```js
+async userRegister () {
+    const success = await this.$validator.validateAll()
+    const { phone, code, password, rePassword } = this
+    const reqTrue = phone && code && password === rePassword
+    // 全部表单验证成功，在向服务器发请求，进行祖册
+    // 只要有一个表单没有成功，不会发请求
+    if (success) {
+        try {
+            reqTrue && await this.$store.dispatch('User/UserRegister', { phone, code, password })
+            this.$router.push('/login')
+        } catch (error) {
+            console.log(error.message)
+        }
+    }
+}
+```
+
+## 打包上线
+1. `npm run build`
+2. map文件 => 项目打包后，代码经过压缩，运行时报错输出的错误信息无法准确得知是哪里的代码报错，map文件可以像加密的代码一样，准确的输出是哪一行哪一列报错
+    - 如果项目部需要可以去掉
+    - vue.config.js 配置
+        - `productionSourceMap: false`
+3. 安全组
+- 让服务器的一些端口号打开
+4. 利用xshell登陆服务器
+5. nginx（反向代理）配置
+
+
+## 组件通信方式
+1. props => 使用场景:[父子通信]
+    传递数据类型：
+    1. 可能是函数  -----------实质子组件想给父亲传递数据
+    2. 可能不是函数-----------实质就是父亲给子组件传递数据
+        <TodoList :todos="123"  updateChecked="hander">
+    特殊情况：路由传递props
+    1. 布尔值类型，把路由中params参数映射为组件props数据
+    2. 对象，静态数据，很少用
+    3. 函数，可以把路由中params|query参数映射为组件props数据
+2. 自定义事件   $emit  $on[简写@]
+    1. 事件:原生DOM事件----【click|mouseenter........】
+    2. 事件：自定义事件-----[子给父传递数据]
+3. $bus 全局事件总线----【万能】
+    组件实例的原型的原型指向的Vue.prototype
+4. pubsub-js【发布订阅消息】*****在vue中根本不用【React】 ----万能
+5. Vuex[仓库]  -----数据非持久化----万能的
+6. 插槽-----父子通信【结构】 => slot
+    1. 默认插槽
+    2. 具名插槽
+    3. 作用域插槽:子组件的数据来源于父组件，但是子组件的结构和外观由父亲决定。
+
+watch|computed|method区别？
+{
+    name:'王二麻子',
+    eat:function(){
+
+    }
+}
+7. 事件相关
+    1. 原生DOM事件
+    2. 自定义事件
+    <Event1 @click="handler1"></Event1>
+    - 组件绑定原生DOM事件，并非原生DOM事件，而是所谓的自定义事件。
+    - 如果你想把自定义事件变为原生DOM事件，需要加上修饰符.native修饰
+    - 这个修饰符，可以把自定义事件【名字：原生DOM类型的】变为原生DOM事件
+
+8. v-model实现组件通信
+    - v-model：指令，可以收集表单数据【text、radio、checkbox、range】等等
+    - 切记：v-model收集checkbox需要用数组收集
+    - v-model:实现原理   :value  @input  还可以实现父子数据同步。
+    ```html
+    <CustomInput v-model="msg"></CustomInput>
+    ```
+9. 属性修饰符.sync，可以实现父子数据同步 => elementUI组件
+10. $attrs与$listeners   ----vue-helper  父子组件通信
+    1. $attrs：组件实例的属性，可以获取到父亲传递的props数据（前提子组件没有通过props接受）
+    2. $listeners：组件实例的属性，可以获取到父亲传递自定义事件（对象形式呈现）
+11. $children与$parent => 可以实现父子组件通信
+    1. ref:可以在父组件内部获取子组件---实现父子通信
+    2. $children:可以在父组件内部获取全部的子组件【返回数组】
+    3. $parent:可以在子组件内部获取唯一的父组件【返回组件实例】

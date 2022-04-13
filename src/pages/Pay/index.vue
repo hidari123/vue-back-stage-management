@@ -120,8 +120,27 @@ export default {
         // x号
         showClose: false,
         // 关闭弹出框前的回调
-        beforeClose: (type, instance) => {
-
+        beforeClose: (type, instance, done) => {
+          // type 区分取消 | 确定按钮
+          // instance 当前组件实例
+          // done 关闭弹出框的方法
+          if (type === 'cancel') {
+            alert('请联系管理员')
+            // 清除定时器
+            clearInterval(this.timer)
+            this.timer = null
+            this.$msgbox.close()
+          } else { // type = 'confirm'
+            if (this.payStatus.code === 205) {
+              // 支付成功
+            // 清除定时器
+              clearInterval(this.timer)
+              this.timer = null
+              done()
+              // 跳转到支付成功页面
+              this.$router.push('/paysuccess')
+            }
+          }
         }
       })
       // 需要知道支付成功 | 失败

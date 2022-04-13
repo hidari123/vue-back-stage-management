@@ -13,6 +13,12 @@ import Pagination from '@/components/Pagination'
 import { MessageBox } from 'element-ui'
 // Import Swiper styles
 import 'swiper/css/swiper.css'
+// 引入 lazyloac
+import VueLazyload from 'vue-lazyload'
+import atm from '@/assets/1.gif'
+// 引入自定义插件
+import myPlugins from '@/plugins/myPlugins'
+import '@/plugins/validate'
 
 // 注册组件
 Vue.component(TypeNav.name, TypeNav)
@@ -21,7 +27,14 @@ Vue.component(Pagination.name, Pagination)
 Vue.prototype.$msgbox = MessageBox
 Vue.prototype.$alert = MessageBox.alert
 Vue.config.productionTip = false
-
+// 调用 Vue.use() 实际调用插件中的 install 方法
+Vue.use(VueLazyload, {
+  // 懒加载默认图
+  loading: atm
+})
+Vue.use(myPlugins, {
+  name: 'upper'
+})
 new Vue({
   // 当这里写 router 时，组件身上都有 $router, $route 属性
   router,
